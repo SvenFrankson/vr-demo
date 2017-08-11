@@ -6,9 +6,9 @@ class Utils {
     } else if (Main.Canvas.webkitRequestFullscreen) {
       Main.Canvas.webkitRequestFullscreen();
     }
-    if (screen.orientation.lock) {
-      screen.orientation.lock("landscape");
-    }
+    /*if (screen.orientation["lock"]) {
+      screen.orientation["lock"]("landscape");
+    }*/
     Main.Engine.resize();
   }
 }

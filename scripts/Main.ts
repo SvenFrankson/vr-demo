@@ -5,13 +5,19 @@ class Main {
   public static Canvas: HTMLCanvasElement;
   public static Engine: BABYLON.Engine;
   public static Scene: BABYLON.Scene;
-  public static Camera: BABYLON.VRDeviceOrientationFreeCamera;
+  public static Camera: BABYLON.FreeCamera;
   public static Light: BABYLON.Light;
 
   public static neCube: BABYLON.Mesh;
   public static nwCube: BABYLON.Mesh;
   public static seCube: BABYLON.Mesh;
   public static swCube: BABYLON.Mesh;
+
+  public static walkIcon: Icon;
+  public static buildIcon: Icon;
+  public static deleteIcon: Icon;
+
+  public static forward: boolean;
 
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -21,13 +27,33 @@ class Main {
   createScene(): void {
     Main.Scene = new BABYLON.Scene(Main.Engine);
 
-    Main.Camera = new BABYLON.VRDeviceOrientationFreeCamera(
-      "VRCamera",
-      new BABYLON.Vector3(0, 1.5, 0),
-      Main.Scene,
-      true
-    );
-    Main.Camera.attachControl(Main.Canvas);
+    if (navigator.getVRDisplays) {
+      console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
+      Main.Camera = new BABYLON.WebVRFreeCamera(
+        "VRCamera",
+        new BABYLON.Vector3(0, 1.5, 0),
+        Main.Scene
+      );
+    } else {
+      console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
+      Main.Camera = new BABYLON.VRDeviceOrientationFreeCamera(
+        "VRCamera",
+        new BABYLON.Vector3(0, 1.5, 0),
+        Main.Scene
+      );
+    }
+    Main.Camera.minZ = 0.2;
+    Main.Canvas.ontouchend = () => {
+      Main.Canvas.ontouchend = undefined;
+       Main.Engine.switchFullscreen(true);
+      Main.Camera.attachControl(Main.Canvas, true);
+      Main.Canvas.ontouchstart = () => {
+        Main.forward = true;
+      };
+      Main.Canvas.ontouchend = () => {
+        Main.forward = false;
+      };
+    };
 
     Main.Light = new BABYLON.HemisphericLight("AmbientLight", BABYLON.Axis.Y, Main.Scene);
     Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
@@ -42,6 +68,7 @@ class Main {
     Main.neCube = BABYLON.MeshBuilder.CreateBox("NECube", 1, Main.Scene);
     Main.neCube.position.copyFromFloats(4.5, 0.5, 4.5);
     Main.neCube.material = new BABYLON.StandardMaterial("NECubeMaterial", Main.Scene);
+    Main.neCube.scaling.y = 5;
 
     Main.nwCube = BABYLON.MeshBuilder.CreateBox("NWCube", 1, Main.Scene);
     Main.nwCube.position.copyFromFloats(-4.5, 0.5, 4.5);
@@ -54,10 +81,29 @@ class Main {
     Main.swCube = BABYLON.MeshBuilder.CreateBox("SWCube", 1, Main.Scene);
     Main.swCube.position.copyFromFloats(-4.5, 0.5, -4.5);
     Main.swCube.material = new BABYLON.StandardMaterial("SWCubeMaterial", Main.Scene);
+
+    Main.walkIcon = new Icon(
+      "walk-icon",
+      new BABYLON.Vector3(-1, -1, 1),
+      Main.Camera
+    );
+    Main.buildIcon = new Icon(
+      "build-icon",
+      new BABYLON.Vector3(0, -1, 2),
+      Main.Camera
+    );
+    Main.deleteIcon = new Icon(
+      "delete-icon",
+      new BABYLON.Vector3(1, -1, 1),
+      Main.Camera
+    );
   }
 
   public animate(): void {
     Main.Engine.runRenderLoop(() => {
+      if (Main.forward) {
+        Main.Camera.position.z += 0.01;
+      }
       Main.Scene.render();
     });
 
@@ -72,6 +118,7 @@ window.addEventListener("DOMContentLoaded", () => {
   game.createScene();
   game.animate();
 
+  /*
   Main.Canvas.addEventListener("touchstart", (event: TouchEvent) => {
     Interact.ButtonDown();
   });
@@ -107,4 +154,5 @@ window.addEventListener("DOMContentLoaded", () => {
       );
     }
   });
+  */
 });
