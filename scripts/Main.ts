@@ -5,7 +5,7 @@ class Main {
   public static Canvas: HTMLCanvasElement;
   public static Engine: BABYLON.Engine;
   public static Scene: BABYLON.Scene;
-  public static Camera: BABYLON.FreeCamera;
+  public static Camera: BABYLON.WebVRFreeCamera;
   public static Light: BABYLON.Light;
 
   public static neCube: BABYLON.Mesh;
@@ -13,7 +13,7 @@ class Main {
   public static seCube: BABYLON.Mesh;
   public static swCube: BABYLON.Mesh;
 
-  public static walkIcon: Icon;
+  public static moveIcon: Icon;
   public static buildIcon: Icon;
   public static deleteIcon: Icon;
 
@@ -36,21 +36,16 @@ class Main {
       );
     } else {
       console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
-      Main.Camera = new BABYLON.VRDeviceOrientationFreeCamera(
-        "VRCamera",
-        new BABYLON.Vector3(0, 1.5, 0),
-        Main.Scene
-      );
     }
     Main.Camera.minZ = 0.2;
-    Main.Canvas.ontouchend = () => {
-      Main.Canvas.ontouchend = undefined;
+    Main.Canvas.onpointerup = () => {
+      Main.Canvas.onpointerup = undefined;
        Main.Engine.switchFullscreen(true);
       Main.Camera.attachControl(Main.Canvas, true);
-      Main.Canvas.ontouchstart = () => {
+      Main.Canvas.onpointerdown = () => {
         Main.forward = true;
       };
-      Main.Canvas.ontouchend = () => {
+      Main.Canvas.onpointerup = () => {
         Main.forward = false;
       };
     };
@@ -82,8 +77,8 @@ class Main {
     Main.swCube.position.copyFromFloats(-4.5, 0.5, -4.5);
     Main.swCube.material = new BABYLON.StandardMaterial("SWCubeMaterial", Main.Scene);
 
-    Main.walkIcon = new Icon(
-      "walk-icon",
+    Main.moveIcon = new Icon(
+      "move-icon",
       new BABYLON.Vector3(-1, -1, 1),
       Main.Camera
     );

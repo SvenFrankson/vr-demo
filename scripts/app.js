@@ -2,10 +2,13 @@ class Icon extends BABYLON.Mesh {
     constructor(picture, position, camera, scale = 1) {
         super(picture, camera.getScene());
         this.localPosition = BABYLON.Vector3.Zero();
+        this._cameraForward = BABYLON.Vector3.Zero();
         this._targetPosition = BABYLON.Vector3.Zero();
+        this._worldishMatrix = BABYLON.Matrix.Identity();
+        this._alphaCam = 0;
         this.localPosition.copyFrom(position);
         this.camera = camera;
-        this.rotation.copyFromFloats(0, Math.PI, 0);
+        this.rotation.copyFromFloats(0, 0, 0);
         if (Icon.iconMeshData && Icon.iconFrameMeshData) {
             this.Initialize();
         }
@@ -29,11 +32,14 @@ class Icon extends BABYLON.Mesh {
             for (let i = 0; i < meshes.length; i++) {
                 if (meshes[i] instanceof BABYLON.Mesh) {
                     let mesh = meshes[i];
-                    if (mesh.name.indexOf("Icon")) {
+                    if (mesh.name.indexOf("Icon") !== -1) {
                         Icon.iconMeshData = BABYLON.VertexData.ExtractFromMesh(mesh);
                     }
-                    else if (mesh.name.indexOf("Frame")) {
+                    else if (mesh.name.indexOf("Frame") !== -1) {
                         Icon.iconFrameMeshData = BABYLON.VertexData.ExtractFromMesh(mesh);
+                        if (mesh.material instanceof BABYLON.MultiMaterial) {
+                            Icon.iconFrameMaterial = mesh.material;
+                        }
                     }
                     mesh.dispose();
                 }
@@ -49,16 +55,35 @@ class Icon extends BABYLON.Mesh {
         Icon.iconMeshData.applyToMesh(icon);
         icon.position.copyFromFloats(0, 0, 0);
         icon.parent = this;
+        let iconMaterial = new BABYLON.StandardMaterial(this.name + "-mat", this.getScene());
+        iconMaterial.diffuseTexture = new BABYLON.Texture("./datas/textures/" + this.name + ".png", this.getScene());
+        iconMaterial.diffuseTexture.hasAlpha = true;
+        iconMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+        icon.material = iconMaterial;
         let frame = new BABYLON.Mesh(this.name + "-frame", this.getScene());
         Icon.iconFrameMeshData.applyToMesh(frame);
         frame.position.copyFromFloats(0, 0, 0);
         frame.parent = this;
+        let frameMaterial = new BABYLON.StandardMaterial(this.name + "-frame-mat", this.getScene());
+        frameMaterial.diffuseColor.copyFromFloats(0.9, 0.9, 0.9);
+        frameMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+        frame.material = frameMaterial;
         console.log("Icon " + this.name + " initialized.");
     }
     UpdatePosition() {
-        this._targetPosition.copyFrom(this.camera.position);
-        this._targetPosition.addInPlace(this.localPosition);
-        BABYLON.Vector3.LerpToRef(this.position, this._targetPosition, 0.1, this.position);
+        this._cameraForward = this.camera.getForwardRay().direction;
+        if (this._cameraForward.y > 0) {
+            this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
+        }
+        let rotationQuaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, this._alphaCam);
+        BABYLON.Matrix.ComposeToRef(BABYLON.Vector3.One(), rotationQuaternion, this.camera.position, this._worldishMatrix);
+        BABYLON.Vector3.TransformCoordinatesToRef(this.localPosition, this._worldishMatrix, this._targetPosition);
+        if (isNaN(this._targetPosition.x)) {
+            console.log("Break");
+            return;
+        }
+        BABYLON.Vector3.LerpToRef(this.position, this._targetPosition, 0.05, this.position);
+        this.lookAt(this.camera.position, 0, Math.PI, Math.PI);
     }
 }
 Icon.onIconFrameDataLoaded = [];
@@ -93,17 +118,16 @@ class Main {
         }
         else {
             console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
-            Main.Camera = new BABYLON.VRDeviceOrientationFreeCamera("VRCamera", new BABYLON.Vector3(0, 1.5, 0), Main.Scene);
         }
         Main.Camera.minZ = 0.2;
-        Main.Canvas.ontouchend = () => {
-            Main.Canvas.ontouchend = undefined;
+        Main.Canvas.onpointerup = () => {
+            Main.Canvas.onpointerup = undefined;
             Main.Engine.switchFullscreen(true);
             Main.Camera.attachControl(Main.Canvas, true);
-            Main.Canvas.ontouchstart = () => {
+            Main.Canvas.onpointerdown = () => {
                 Main.forward = true;
             };
-            Main.Canvas.ontouchend = () => {
+            Main.Canvas.onpointerup = () => {
                 Main.forward = false;
             };
         };
@@ -127,7 +151,7 @@ class Main {
         Main.swCube = BABYLON.MeshBuilder.CreateBox("SWCube", 1, Main.Scene);
         Main.swCube.position.copyFromFloats(-4.5, 0.5, -4.5);
         Main.swCube.material = new BABYLON.StandardMaterial("SWCubeMaterial", Main.Scene);
-        Main.walkIcon = new Icon("walk-icon", new BABYLON.Vector3(-1, -1, 1), Main.Camera);
+        Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-1, -1, 1), Main.Camera);
         Main.buildIcon = new Icon("build-icon", new BABYLON.Vector3(0, -1, 2), Main.Camera);
         Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(1, -1, 1), Main.Camera);
     }
@@ -148,6 +172,31 @@ window.addEventListener("DOMContentLoaded", () => {
     game.createScene();
     game.animate();
 });
+class VRMath {
+    static ProjectPerpendicularAt(v, at) {
+        let p = BABYLON.Vector3.Zero();
+        let k = (v.x * at.x + v.y * at.y + v.z * at.z);
+        k = k / (at.x * at.x + at.y * at.y + at.z * at.z);
+        p.copyFrom(v);
+        p.subtractInPlace(at.multiplyByFloats(k, k, k));
+        return p;
+    }
+    static Angle(from, to) {
+        let pFrom = BABYLON.Vector3.Normalize(from);
+        let pTo = BABYLON.Vector3.Normalize(to);
+        let angle = Math.acos(BABYLON.Vector3.Dot(pFrom, pTo));
+        return angle;
+    }
+    static AngleFromToAround(from, to, around) {
+        let pFrom = VRMath.ProjectPerpendicularAt(from, around).normalize();
+        let pTo = VRMath.ProjectPerpendicularAt(to, around).normalize();
+        let angle = Math.acos(BABYLON.Vector3.Dot(pFrom, pTo));
+        if (BABYLON.Vector3.Dot(BABYLON.Vector3.Cross(pFrom, pTo), around) < 0) {
+            angle = -angle;
+        }
+        return angle;
+    }
+}
 class Utils {
     static RequestFullscreen() {
         if (Main.Canvas.requestFullscreen) {
