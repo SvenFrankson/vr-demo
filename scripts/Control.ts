@@ -27,11 +27,14 @@ class Control {
     let ray: BABYLON.Ray = Main.Camera.getForwardRay();
     let pick: BABYLON.PickingInfo = Main.Scene.pickWithRay(
       ray,
-      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick;}
+      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible;}
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
-      if (Control._meshAimed.parent instanceof Icon) {
+      if (
+        Control._meshAimed.parent instanceof Icon ||
+        Control._meshAimed.parent instanceof SmallIcon
+      ) {
         Control._meshAimed.parent.onActivate();
         return;
       }
@@ -44,11 +47,13 @@ class Control {
         let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
         correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
         let coordinates: BABYLON.Vector3 = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
-        let newBrick: Brick = new Brick(coordinates);
-        let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
-        brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
-        brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-        newBrick.material = brickMaterial;
+        let newBrick: Brick = Brick.TryAdd(coordinates, 2, 3, 2);
+        if (newBrick) {
+          let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
+          brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+          brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+          newBrick.material = brickMaterial;
+        }
       }
     }
     if (Control.mode === 2) {
@@ -74,15 +79,19 @@ class Control {
   public static Update(): void {
     Control.previewBrick.isVisible = false;
     Icon.UnlitAll();
+    SmallIcon.UnlitAll();
     Brick.UnlitAll();
     let ray: BABYLON.Ray = Main.Camera.getForwardRay();
     let pick: BABYLON.PickingInfo = Main.Scene.pickWithRay(
       ray,
-      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick;}
+      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible;}
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
-      if (Control._meshAimed.parent instanceof Icon) {
+      if (
+        Control._meshAimed.parent instanceof Icon ||
+        Control._meshAimed.parent instanceof SmallIcon
+      ) {
         Control._meshAimed.parent.Hightlight();
       } else {
         if (Control._meshAimed instanceof Brick) {
@@ -118,7 +127,7 @@ class Control {
   public static CreatePreviewBrick(): void {
     Control.previewBrick = new BABYLON.Mesh("PreviewBrick", Main.Scene);
     Control.previewBrick.isPickable = false;
-    BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
+    BrickData.CubicalData(2, 3, 2).applyToMesh(Control.previewBrick);
     let previewBrickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
     previewBrickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
     previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);

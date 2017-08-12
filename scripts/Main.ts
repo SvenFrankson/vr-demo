@@ -77,9 +77,32 @@ class Main {
       Main.Camera,
       0.5,
       () => {
+        Main.buildIcon.ShowSmallIcons();
+        Control.mode = 4;
+      }
+    );
+    let bsmall: SmallIcon = new SmallIcon(
+      "",
+      new BABYLON.Vector3(0, 1.2, 0),
+      Main.buildIcon,
+      1,
+      () => {
+        Main.buildIcon.HideSmallIcons();
         Control.mode = 1;
       }
     );
+    Main.buildIcon.AddSmallIcon(bsmall);
+    let bsmall2: SmallIcon = new SmallIcon(
+      "",
+      new BABYLON.Vector3(0, 2.2, 0),
+      Main.buildIcon,
+      1,
+      () => {
+        Main.buildIcon.HideSmallIcons();
+        Control.mode = 1;
+      }
+    );
+    Main.buildIcon.AddSmallIcon(bsmall2);
     Main.deleteIcon = new Icon(
       "delete-icon",
       new BABYLON.Vector3(0.7, -1.5, 0.4),

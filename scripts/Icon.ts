@@ -3,7 +3,7 @@ class Icon extends BABYLON.Mesh {
   public static instances: Icon[] = [];
   private static iconMeshData: BABYLON.VertexData;
   private static iconFrameMeshData: BABYLON.VertexData;
-  private static iconFrameMaterial: BABYLON.MultiMaterial;
+  private static iconFrameMaterial: BABYLON.StandardMaterial;
   private static onIconFrameDataLoaded: (() => void)[] = [];
   private static iconFrameDataLoading: boolean = false;
 
@@ -28,13 +28,14 @@ class Icon extends BABYLON.Mesh {
               Icon.iconMeshData = BABYLON.VertexData.ExtractFromMesh(mesh);
             } else if (mesh.name.indexOf("Frame") !== -1) {
               Icon.iconFrameMeshData = BABYLON.VertexData.ExtractFromMesh(mesh);
-              if (mesh.material instanceof BABYLON.MultiMaterial) {
-                Icon.iconFrameMaterial = mesh.material;
-              }
             }
             mesh.dispose();
           }
         }
+        Icon.iconFrameMaterial = new BABYLON.StandardMaterial("IconFrameMaterial", scene);
+        Icon.iconFrameMaterial.diffuseTexture = new BABYLON.Texture("./datas/textures/frame-icon.png", scene);
+        Icon.iconFrameMaterial.diffuseColor.copyFromFloats(0.9, 0.9, 0.9);
+        Icon.iconFrameMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         for (let i: number = 0; i < Icon.onIconFrameDataLoaded.length; i++) {
           Icon.onIconFrameDataLoaded[i]();
         }
@@ -45,6 +46,7 @@ class Icon extends BABYLON.Mesh {
   private localPosition: BABYLON.Vector3 = BABYLON.Vector3.Zero();
   private camera: BABYLON.FreeCamera;
   private frame: BABYLON.Mesh;
+  public smallIcons: SmallIcon[] = [];
   public onActivate: () => void;
 
   constructor(
@@ -95,12 +97,31 @@ class Icon extends BABYLON.Mesh {
     Icon.iconFrameMeshData.applyToMesh(this.frame);
     this.frame.position.copyFromFloats(0, 0, 0);
     this.frame.parent = this;
-    let frameMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial(this.name + "-frame-mat", this.getScene());
-    frameMaterial.diffuseColor.copyFromFloats(0.9, 0.9, 0.9);
-    frameMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-    this.frame.material = frameMaterial;
+    this.frame.material = Icon.iconFrameMaterial;
 
     console.log("Icon " + this.name + " initialized.");
+  }
+
+  public AddSmallIcon(smallIcon: SmallIcon): void {
+    this.smallIcons.push(smallIcon);
+  }
+
+  public ShowSmallIcons(): void {
+    for (let i: number = 0; i < this.smallIcons.length; i++) {
+      let smallIcon: SmallIcon = this.smallIcons[i];
+      for (let j: number = 0; j < smallIcon.getChildMeshes().length; j++) {
+        smallIcon.getChildMeshes()[j].isVisible = true;
+      }
+    }
+  }
+
+  public HideSmallIcons(): void {
+    for (let i: number = 0; i < this.smallIcons.length; i++) {
+      let smallIcon: SmallIcon = this.smallIcons[i];
+      for (let j: number = 0; j < smallIcon.getChildMeshes().length; j++) {
+        smallIcon.getChildMeshes()[j].isVisible = false;
+      }
+    }
   }
 
   public Hightlight(): void {

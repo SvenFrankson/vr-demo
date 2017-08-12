@@ -1,5 +1,6 @@
 class Brick extends BABYLON.Mesh {
   public static instances: Brick[] = [];
+  public static grid: boolean[][][] = [];
 
   public static WorldPosToBrickCoordinates(
     worldPosition: BABYLON.Vector3
@@ -21,13 +22,65 @@ class Brick extends BABYLON.Mesh {
     return worldPosition;
   }
 
+  public static IsOccupied(c: BABYLON.Vector3): boolean {
+    if (Brick.grid[c.x] === undefined) {
+      return false;
+    }
+    if (Brick.grid[c.x][c.y] === undefined) {
+      return false;
+    }
+    if (Brick.grid[c.x][c.y][c.z] === true) {
+      return true;
+    }
+    return false;
+  }
+
+  public static Occupy(c: BABYLON.Vector3): void {
+    if (Brick.grid[c.x] === undefined) {
+      Brick.grid[c.x] = [];
+    }
+    if (Brick.grid[c.x][c.y] === undefined) {
+      Brick.grid[c.x][c.y] = [];
+    }
+    Brick.grid[c.x][c.y][c.z] = true;
+  }
+
+  public static TryAdd(
+    c: BABYLON.Vector3,
+    width: number,
+    height: number,
+    length: number
+  ): Brick {
+    for (let i: number = 0; i < width; i++) {
+      for (let j: number = 0; j < height; j++) {
+        for (let k: number = 0; k < length; k++) {
+          if (Brick.IsOccupied(c.add(new BABYLON.Vector3(i, j, k)))) {
+            return undefined;
+          }
+        }
+      }
+    }
+    let brick: Brick = new Brick(c, width, height, length);
+    return brick;
+  }
+
   constructor(
-    coordinates: BABYLON.Vector3
+    c: BABYLON.Vector3,
+    width: number,
+    height: number,
+    length: number
   ) {
-    console.log("Add new Brick at " + coordinates.x + " " + coordinates.y + " " + coordinates.z);
+    console.log("Add new Brick at " + c.x + " " + c.y + " " + c.z);
     super("Brick", Main.Scene);
-    BrickData.CubicalData(1, 3, 1).applyToMesh(this);
-    this.position = Brick.BrickCoordinatesToWorldPos(coordinates);
+    BrickData.CubicalData(width, height, length).applyToMesh(this);
+    this.position = Brick.BrickCoordinatesToWorldPos(c);
+    for (let i: number = 0; i < width; i++) {
+      for (let j: number = 0; j < height; j++) {
+        for (let k: number = 0; k < length; k++) {
+          Brick.Occupy(c.add(new BABYLON.Vector3(i, j, k)));
+        }
+      }
+    }
     this.freezeWorldMatrix();
     Brick.instances.push(this);
   }
