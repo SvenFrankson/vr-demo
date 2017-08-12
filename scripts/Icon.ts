@@ -1,5 +1,6 @@
 class Icon extends BABYLON.Mesh {
 
+  public static instances: Icon[] = [];
   private static iconMeshData: BABYLON.VertexData;
   private static iconFrameMeshData: BABYLON.VertexData;
   private static iconFrameMaterial: BABYLON.MultiMaterial;
@@ -43,17 +44,22 @@ class Icon extends BABYLON.Mesh {
 
   private localPosition: BABYLON.Vector3 = BABYLON.Vector3.Zero();
   private camera: BABYLON.FreeCamera;
+  private frame: BABYLON.Mesh;
+  public onActivate: () => void;
 
   constructor(
     picture: string,
     position: BABYLON.Vector3,
     camera: BABYLON.FreeCamera,
-    scale: number = 1
+    scale: number = 1,
+    onActivate: () => void = () => {return;}
   ) {
     super(picture, camera.getScene());
     this.localPosition.copyFrom(position);
     this.camera = camera;
     this.rotation.copyFromFloats(0, 0, 0);
+    this.scaling.copyFromFloats(scale, scale, scale);
+    this.onActivate = onActivate;
     if (Icon.iconMeshData && Icon.iconFrameMeshData) {
       this.Initialize();
     } else {
@@ -69,6 +75,7 @@ class Icon extends BABYLON.Mesh {
         this.UpdatePosition();
       }
     );
+    Icon.instances.push(this);
   }
 
   private Initialize(): void {
@@ -84,16 +91,38 @@ class Icon extends BABYLON.Mesh {
     iconMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
     icon.material = iconMaterial;
 
-    let frame: BABYLON.Mesh = new BABYLON.Mesh(this.name + "-frame", this.getScene());
-    Icon.iconFrameMeshData.applyToMesh(frame);
-    frame.position.copyFromFloats(0, 0, 0);
-    frame.parent = this;
+    this.frame = new BABYLON.Mesh(this.name + "-frame", this.getScene());
+    Icon.iconFrameMeshData.applyToMesh(this.frame);
+    this.frame.position.copyFromFloats(0, 0, 0);
+    this.frame.parent = this;
     let frameMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial(this.name + "-frame-mat", this.getScene());
     frameMaterial.diffuseColor.copyFromFloats(0.9, 0.9, 0.9);
     frameMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-    frame.material = frameMaterial;
+    this.frame.material = frameMaterial;
 
     console.log("Icon " + this.name + " initialized.");
+  }
+
+  public Hightlight(): void {
+    if (this.frame) {
+      this.frame.renderOutline = true;
+      this.frame.outlineColor = BABYLON.Color3.White();
+      this.frame.outlineWidth = 0.02;
+    }
+  }
+
+  public Unlit(): void {
+    if (this.frame) {
+      this.frame.renderOutline = false;
+    }
+  }
+
+  public static UnlitAll(): void {
+    Icon.instances.forEach(
+      (i: Icon) => {
+        i.Unlit();
+      }
+    );
   }
 
   private _cameraForward: BABYLON.Vector3 = BABYLON.Vector3.Zero();
@@ -102,7 +131,7 @@ class Icon extends BABYLON.Mesh {
   private _alphaCam: number = 0;
   private UpdatePosition(): void {
     this._cameraForward = this.camera.getForwardRay().direction;
-    if (this._cameraForward.y > 0) {
+    if (this._cameraForward.y > -0.3) {
       this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
     }
     let rotationQuaternion: BABYLON.Quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, this._alphaCam);
@@ -118,7 +147,6 @@ class Icon extends BABYLON.Mesh {
       this._targetPosition
     );
     if (isNaN(this._targetPosition.x)) {
-      console.log("Break");
       return;
     }
     BABYLON.Vector3.LerpToRef(this.position, this._targetPosition, 0.05, this.position);

@@ -31,7 +31,7 @@ class Main {
       console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
       Main.Camera = new BABYLON.WebVRFreeCamera(
         "VRCamera",
-        new BABYLON.Vector3(0, 1.5, 0),
+        new BABYLON.Vector3(0, 2, 0),
         Main.Scene
       );
     } else {
@@ -43,10 +43,10 @@ class Main {
        Main.Engine.switchFullscreen(true);
       Main.Camera.attachControl(Main.Canvas, true);
       Main.Canvas.onpointerdown = () => {
-        Main.forward = true;
+        Control.onPointerDown();
       };
       Main.Canvas.onpointerup = () => {
-        Main.forward = false;
+        Control.onPointerUp();
       };
     };
 
@@ -79,26 +79,36 @@ class Main {
 
     Main.moveIcon = new Icon(
       "move-icon",
-      new BABYLON.Vector3(-1, -1, 1),
-      Main.Camera
+      new BABYLON.Vector3(-0.7, -1.5, 0.7),
+      Main.Camera,
+      0.5,
+      () => {
+        Control.mode = 0;
+      }
     );
     Main.buildIcon = new Icon(
       "build-icon",
-      new BABYLON.Vector3(0, -1, 2),
-      Main.Camera
+      new BABYLON.Vector3(0, -1.5, 1),
+      Main.Camera,
+      0.5,
+      () => {
+        Control.mode = 1;
+      }
     );
     Main.deleteIcon = new Icon(
       "delete-icon",
-      new BABYLON.Vector3(1, -1, 1),
-      Main.Camera
+      new BABYLON.Vector3(0.7, -1.5, 0.7),
+      Main.Camera,
+      0.5,
+      () => {
+        Control.mode = 2;
+      }
     );
   }
 
   public animate(): void {
     Main.Engine.runRenderLoop(() => {
-      if (Main.forward) {
-        Main.Camera.position.z += 0.01;
-      }
+      Control.Update();
       Main.Scene.render();
     });
 

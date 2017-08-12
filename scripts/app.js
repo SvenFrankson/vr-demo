@@ -1,5 +1,77 @@
+class Control {
+    static onPointerDown() {
+        let t = (new Date()).getTime();
+        if ((t - Control._lastPointerDownTime) < Control.DOUBLEPOINTERDELAY) {
+            Control._lastPointerDownTime = t;
+            return this.onDoublePointerDown();
+        }
+        Control._lastPointerDownTime = t;
+        let ray = Main.Camera.getForwardRay();
+        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return true; });
+        if (pick.hit) {
+            Control._meshAimed = pick.pickedMesh;
+            if (Control._meshAimed.parent instanceof Icon) {
+                Control._meshAimed.parent.onActivate();
+                return;
+            }
+        }
+        if (Control.mode === 0) {
+            Control._cameraSpeed = 0.05;
+        }
+        if (Control.mode === 1) {
+            if (pick.hit) {
+                let newBox = BABYLON.MeshBuilder.CreateBox("New", 1, Main.Scene);
+                newBox.position.copyFrom(pick.pickedPoint);
+                newBox.position.x = Math.round(newBox.position.x);
+                newBox.position.y = Math.round(newBox.position.y);
+                newBox.position.z = Math.round(newBox.position.z);
+            }
+        }
+        if (Control.mode === 2) {
+            if (pick.hit) {
+                if (pick.pickedMesh) {
+                    pick.pickedMesh.dispose();
+                }
+            }
+        }
+    }
+    static onPointerUp() {
+        Control._cameraSpeed = 0;
+    }
+    static onDoublePointerDown() {
+        if (Control.mode === 0) {
+            Control._cameraSpeed = -0.05;
+        }
+    }
+    static Update() {
+        Icon.UnlitAll();
+        let ray = Main.Camera.getForwardRay();
+        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return true; });
+        if (pick.hit) {
+            Control._meshAimed = pick.pickedMesh;
+            if (Control._meshAimed.parent instanceof Icon) {
+                Control._meshAimed.parent.Hightlight();
+            }
+        }
+        if (Control.mode === 0) {
+            Control.UpdateModeMove();
+        }
+    }
+    static UpdateModeMove() {
+        if (Control._cameraSpeed !== 0) {
+            let move = Main.Camera.getForwardRay().direction;
+            move.scaleInPlace(Control._cameraSpeed);
+            Main.Camera.position.addInPlace(move);
+            Main.Camera.position.y = Math.max(Main.Camera.position.y, 2);
+        }
+    }
+}
+Control.DOUBLEPOINTERDELAY = 500;
+Control._lastPointerDownTime = 0;
+Control._cameraSpeed = 0;
+Control.mode = 0;
 class Icon extends BABYLON.Mesh {
-    constructor(picture, position, camera, scale = 1) {
+    constructor(picture, position, camera, scale = 1, onActivate = () => { return; }) {
         super(picture, camera.getScene());
         this.localPosition = BABYLON.Vector3.Zero();
         this._cameraForward = BABYLON.Vector3.Zero();
@@ -9,6 +81,8 @@ class Icon extends BABYLON.Mesh {
         this.localPosition.copyFrom(position);
         this.camera = camera;
         this.rotation.copyFromFloats(0, 0, 0);
+        this.scaling.copyFromFloats(scale, scale, scale);
+        this.onActivate = onActivate;
         if (Icon.iconMeshData && Icon.iconFrameMeshData) {
             this.Initialize();
         }
@@ -21,6 +95,7 @@ class Icon extends BABYLON.Mesh {
         camera.getScene().registerBeforeRender(() => {
             this.UpdatePosition();
         });
+        Icon.instances.push(this);
     }
     static LoadIconFrameData(scene) {
         if (Icon.iconFrameDataLoading) {
@@ -60,32 +135,49 @@ class Icon extends BABYLON.Mesh {
         iconMaterial.diffuseTexture.hasAlpha = true;
         iconMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         icon.material = iconMaterial;
-        let frame = new BABYLON.Mesh(this.name + "-frame", this.getScene());
-        Icon.iconFrameMeshData.applyToMesh(frame);
-        frame.position.copyFromFloats(0, 0, 0);
-        frame.parent = this;
+        this.frame = new BABYLON.Mesh(this.name + "-frame", this.getScene());
+        Icon.iconFrameMeshData.applyToMesh(this.frame);
+        this.frame.position.copyFromFloats(0, 0, 0);
+        this.frame.parent = this;
         let frameMaterial = new BABYLON.StandardMaterial(this.name + "-frame-mat", this.getScene());
         frameMaterial.diffuseColor.copyFromFloats(0.9, 0.9, 0.9);
         frameMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-        frame.material = frameMaterial;
+        this.frame.material = frameMaterial;
         console.log("Icon " + this.name + " initialized.");
+    }
+    Hightlight() {
+        if (this.frame) {
+            this.frame.renderOutline = true;
+            this.frame.outlineColor = BABYLON.Color3.White();
+            this.frame.outlineWidth = 0.02;
+        }
+    }
+    Unlit() {
+        if (this.frame) {
+            this.frame.renderOutline = false;
+        }
+    }
+    static UnlitAll() {
+        Icon.instances.forEach((i) => {
+            i.Unlit();
+        });
     }
     UpdatePosition() {
         this._cameraForward = this.camera.getForwardRay().direction;
-        if (this._cameraForward.y > 0) {
+        if (this._cameraForward.y > -0.3) {
             this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
         }
         let rotationQuaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, this._alphaCam);
         BABYLON.Matrix.ComposeToRef(BABYLON.Vector3.One(), rotationQuaternion, this.camera.position, this._worldishMatrix);
         BABYLON.Vector3.TransformCoordinatesToRef(this.localPosition, this._worldishMatrix, this._targetPosition);
         if (isNaN(this._targetPosition.x)) {
-            console.log("Break");
             return;
         }
         BABYLON.Vector3.LerpToRef(this.position, this._targetPosition, 0.05, this.position);
         this.lookAt(this.camera.position, 0, Math.PI, Math.PI);
     }
 }
+Icon.instances = [];
 Icon.onIconFrameDataLoaded = [];
 Icon.iconFrameDataLoading = false;
 class Interact {
@@ -114,7 +206,7 @@ class Main {
         Main.Scene = new BABYLON.Scene(Main.Engine);
         if (navigator.getVRDisplays) {
             console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
-            Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(0, 1.5, 0), Main.Scene);
+            Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(0, 2, 0), Main.Scene);
         }
         else {
             console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
@@ -125,10 +217,10 @@ class Main {
             Main.Engine.switchFullscreen(true);
             Main.Camera.attachControl(Main.Canvas, true);
             Main.Canvas.onpointerdown = () => {
-                Main.forward = true;
+                Control.onPointerDown();
             };
             Main.Canvas.onpointerup = () => {
-                Main.forward = false;
+                Control.onPointerUp();
             };
         };
         Main.Light = new BABYLON.HemisphericLight("AmbientLight", BABYLON.Axis.Y, Main.Scene);
@@ -151,15 +243,19 @@ class Main {
         Main.swCube = BABYLON.MeshBuilder.CreateBox("SWCube", 1, Main.Scene);
         Main.swCube.position.copyFromFloats(-4.5, 0.5, -4.5);
         Main.swCube.material = new BABYLON.StandardMaterial("SWCubeMaterial", Main.Scene);
-        Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-1, -1, 1), Main.Camera);
-        Main.buildIcon = new Icon("build-icon", new BABYLON.Vector3(0, -1, 2), Main.Camera);
-        Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(1, -1, 1), Main.Camera);
+        Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-0.7, -1.5, 0.7), Main.Camera, 0.5, () => {
+            Control.mode = 0;
+        });
+        Main.buildIcon = new Icon("build-icon", new BABYLON.Vector3(0, -1.5, 1), Main.Camera, 0.5, () => {
+            Control.mode = 1;
+        });
+        Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(0.7, -1.5, 0.7), Main.Camera, 0.5, () => {
+            Control.mode = 2;
+        });
     }
     animate() {
         Main.Engine.runRenderLoop(() => {
-            if (Main.forward) {
-                Main.Camera.position.z += 0.01;
-            }
+            Control.Update();
             Main.Scene.render();
         });
         window.addEventListener("resize", () => {
