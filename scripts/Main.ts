@@ -17,6 +17,7 @@ class Main {
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
     Main.Engine = new BABYLON.Engine(Main.Canvas, true);
+    Main.Engine.setHardwareScalingLevel(0.5);
   }
 
   createScene(): void {
@@ -26,7 +27,7 @@ class Main {
       console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
       Main.Camera = new BABYLON.WebVRFreeCamera(
         "VRCamera",
-        new BABYLON.Vector3(16 * Config.XSize, 2, 16 * Config.ZSize),
+        new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2),
         Main.Scene
       );
     } else {
@@ -54,7 +55,8 @@ class Main {
 
     // debug purpose only under this line
     let ground: BABYLON.Mesh = new BABYLON.Mesh("Ground", Main.Scene);
-    BrickData.CubicalData(32, 1, 32).applyToMesh(ground);
+    BrickData.CubicalData(Config.XMax, 1, Config.ZMax).applyToMesh(ground);
+    ground.position.y = -Config.YSize;
     let groundMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
     groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
     groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
@@ -62,7 +64,7 @@ class Main {
 
     Main.moveIcon = new Icon(
       "move-icon",
-      new BABYLON.Vector3(-0.7, -1.5, 0.7),
+      new BABYLON.Vector3(-0.7, -1.5, 0.4),
       Main.Camera,
       0.5,
       () => {
@@ -71,7 +73,7 @@ class Main {
     );
     Main.buildIcon = new Icon(
       "build-icon",
-      new BABYLON.Vector3(0, -1.5, 1),
+      new BABYLON.Vector3(0, -1.5, 0.6),
       Main.Camera,
       0.5,
       () => {
@@ -80,7 +82,7 @@ class Main {
     );
     Main.deleteIcon = new Icon(
       "delete-icon",
-      new BABYLON.Vector3(0.7, -1.5, 0.7),
+      new BABYLON.Vector3(0.7, -1.5, 0.4),
       Main.Camera,
       0.5,
       () => {

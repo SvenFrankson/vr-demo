@@ -84,19 +84,21 @@ class Control {
       Control._meshAimed = pick.pickedMesh;
       if (Control._meshAimed.parent instanceof Icon) {
         Control._meshAimed.parent.Hightlight();
-      } else if (Control._meshAimed instanceof Brick) {
+      } else {
+        if (Control._meshAimed instanceof Brick) {
+          if (Control.mode === 1) {
+            Control._meshAimed.Hightlight(BABYLON.Color3.White());
+          }
+          if (Control.mode === 2) {
+            Control._meshAimed.Hightlight(BABYLON.Color3.Red());
+          }
+        }
         if (Control.mode === 1) {
-          Control._meshAimed.Hightlight(BABYLON.Color3.White());
+          let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
+          correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
+          Control.previewBrick.isVisible = true;
+          Control.previewBrick.position = Brick.BrickCoordinatesToWorldPos(Brick.WorldPosToBrickCoordinates(correctedPickPoint));
         }
-        if (Control.mode === 2) {
-          Control._meshAimed.Hightlight(BABYLON.Color3.Red());
-        }
-      }
-      if (Control.mode === 1) {
-        let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
-        correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
-        Control.previewBrick.isVisible = true;
-        Control.previewBrick.position = Brick.BrickCoordinatesToWorldPos(Brick.WorldPosToBrickCoordinates(correctedPickPoint));
       }
     }
     if (Control.mode === 0) {

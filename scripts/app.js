@@ -4,6 +4,7 @@ class Brick extends BABYLON.Mesh {
         super("Brick", Main.Scene);
         BrickData.CubicalData(1, 3, 1).applyToMesh(this);
         this.position = Brick.BrickCoordinatesToWorldPos(coordinates);
+        this.freezeWorldMatrix();
         Brick.instances.push(this);
     }
     static WorldPosToBrickCoordinates(worldPosition) {
@@ -26,7 +27,7 @@ class Brick extends BABYLON.Mesh {
         this.outlineWidth = 0.02;
     }
     Unlit() {
-        this.renderOutline = false;
+        this.outlineColor.copyFromFloats(0, 0, 0);
     }
     static UnlitAll() {
         Brick.instances.forEach((i) => {
@@ -261,6 +262,9 @@ class Config {
 Config.XSize = 0.7;
 Config.YSize = 0.3;
 Config.ZSize = 0.7;
+Config.XMax = 32;
+Config.YMax = 32;
+Config.ZMax = 32;
 class Control {
     static get mode() {
         return Control._mode;
@@ -332,19 +336,21 @@ class Control {
             if (Control._meshAimed.parent instanceof Icon) {
                 Control._meshAimed.parent.Hightlight();
             }
-            else if (Control._meshAimed instanceof Brick) {
+            else {
+                if (Control._meshAimed instanceof Brick) {
+                    if (Control.mode === 1) {
+                        Control._meshAimed.Hightlight(BABYLON.Color3.White());
+                    }
+                    if (Control.mode === 2) {
+                        Control._meshAimed.Hightlight(BABYLON.Color3.Red());
+                    }
+                }
                 if (Control.mode === 1) {
-                    Control._meshAimed.Hightlight(BABYLON.Color3.White());
+                    let correctedPickPoint = BABYLON.Vector3.Zero();
+                    correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
+                    Control.previewBrick.isVisible = true;
+                    Control.previewBrick.position = Brick.BrickCoordinatesToWorldPos(Brick.WorldPosToBrickCoordinates(correctedPickPoint));
                 }
-                if (Control.mode === 2) {
-                    Control._meshAimed.Hightlight(BABYLON.Color3.Red());
-                }
-            }
-            if (Control.mode === 1) {
-                let correctedPickPoint = BABYLON.Vector3.Zero();
-                correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
-                Control.previewBrick.isVisible = true;
-                Control.previewBrick.position = Brick.BrickCoordinatesToWorldPos(Brick.WorldPosToBrickCoordinates(correctedPickPoint));
             }
         }
         if (Control.mode === 0) {
@@ -505,12 +511,13 @@ class Main {
     constructor(canvasElement) {
         Main.Canvas = document.getElementById(canvasElement);
         Main.Engine = new BABYLON.Engine(Main.Canvas, true);
+        Main.Engine.setHardwareScalingLevel(0.5);
     }
     createScene() {
         Main.Scene = new BABYLON.Scene(Main.Engine);
         if (navigator.getVRDisplays) {
             console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
-            Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(16 * Config.XSize, 2, 16 * Config.ZSize), Main.Scene);
+            Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2), Main.Scene);
         }
         else {
             console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
@@ -533,18 +540,19 @@ class Main {
         Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
         Main.Light.specular = new BABYLON.Color3(1, 1, 1);
         let ground = new BABYLON.Mesh("Ground", Main.Scene);
-        BrickData.CubicalData(32, 1, 32).applyToMesh(ground);
+        BrickData.CubicalData(Config.XMax, 1, Config.ZMax).applyToMesh(ground);
+        ground.position.y = -Config.YSize;
         let groundMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
         groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
         groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         ground.material = groundMaterial;
-        Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-0.7, -1.5, 0.7), Main.Camera, 0.5, () => {
+        Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-0.7, -1.5, 0.4), Main.Camera, 0.5, () => {
             Control.mode = 0;
         });
-        Main.buildIcon = new Icon("build-icon", new BABYLON.Vector3(0, -1.5, 1), Main.Camera, 0.5, () => {
+        Main.buildIcon = new Icon("build-icon", new BABYLON.Vector3(0, -1.5, 0.6), Main.Camera, 0.5, () => {
             Control.mode = 1;
         });
-        Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(0.7, -1.5, 0.7), Main.Camera, 0.5, () => {
+        Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(0.7, -1.5, 0.4), Main.Camera, 0.5, () => {
             Control.mode = 2;
         });
     }

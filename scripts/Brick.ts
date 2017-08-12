@@ -28,6 +28,7 @@ class Brick extends BABYLON.Mesh {
     super("Brick", Main.Scene);
     BrickData.CubicalData(1, 3, 1).applyToMesh(this);
     this.position = Brick.BrickCoordinatesToWorldPos(coordinates);
+    this.freezeWorldMatrix();
     Brick.instances.push(this);
   }
 
@@ -38,7 +39,7 @@ class Brick extends BABYLON.Mesh {
   }
 
   public Unlit(): void {
-    this.renderOutline = false;
+    this.outlineColor.copyFromFloats(0, 0, 0);
   }
 
   public static UnlitAll(): void {
