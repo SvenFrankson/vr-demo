@@ -2,7 +2,19 @@ class Control {
   private static DOUBLEPOINTERDELAY: number = 500;
   private static _lastPointerDownTime: number = 0;
   private static _cameraSpeed: number = 0;
-  public static mode: number = 0;
+  private static _mode: number = 0;
+  public static get mode(): number {
+    return Control._mode;
+  }
+  public static set mode(v: number) {
+    Control._mode = v;
+    if (Control.mode === 1) {
+      Control.previewBrick.isVisible = true;
+    } else {
+      Control.previewBrick.isVisible = false;
+    }
+  }
+  public static previewBrick: BABYLON.Mesh;
 
   public static onPointerDown(): void {
     let t: number = (new Date()).getTime();
@@ -15,7 +27,7 @@ class Control {
     let ray: BABYLON.Ray = Main.Camera.getForwardRay();
     let pick: BABYLON.PickingInfo = Main.Scene.pickWithRay(
       ray,
-      (mesh: BABYLON.Mesh) => {return true;}
+      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick;}
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
@@ -29,16 +41,19 @@ class Control {
     }
     if (Control.mode === 1) {
       if (pick.hit) {
-        let newBox: BABYLON.Mesh = BABYLON.MeshBuilder.CreateBox("New", 1, Main.Scene);
-        newBox.position.copyFrom(pick.pickedPoint);
-        newBox.position.x = Math.round(newBox.position.x);
-        newBox.position.y = Math.round(newBox.position.y);
-        newBox.position.z = Math.round(newBox.position.z);
+        let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
+        correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
+        let coordinates: BABYLON.Vector3 = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
+        let newBrick: Brick = new Brick(coordinates);
+        let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
+        brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+        brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+        newBrick.material = brickMaterial;
       }
     }
     if (Control.mode === 2) {
       if (pick.hit) {
-        if (pick.pickedMesh) {
+        if (pick.pickedMesh instanceof Brick) {
           pick.pickedMesh.dispose();
         }
       }
@@ -57,16 +72,31 @@ class Control {
 
   private static _meshAimed: BABYLON.AbstractMesh;
   public static Update(): void {
+    Control.previewBrick.isVisible = false;
     Icon.UnlitAll();
+    Brick.UnlitAll();
     let ray: BABYLON.Ray = Main.Camera.getForwardRay();
     let pick: BABYLON.PickingInfo = Main.Scene.pickWithRay(
       ray,
-      (mesh: BABYLON.Mesh) => {return true;}
+      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick;}
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
       if (Control._meshAimed.parent instanceof Icon) {
         Control._meshAimed.parent.Hightlight();
+      } else if (Control._meshAimed instanceof Brick) {
+        if (Control.mode === 1) {
+          Control._meshAimed.Hightlight(BABYLON.Color3.White());
+        }
+        if (Control.mode === 2) {
+          Control._meshAimed.Hightlight(BABYLON.Color3.Red());
+        }
+      }
+      if (Control.mode === 1) {
+        let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
+        correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
+        Control.previewBrick.isVisible = true;
+        Control.previewBrick.position = Brick.BrickCoordinatesToWorldPos(Brick.WorldPosToBrickCoordinates(correctedPickPoint));
       }
     }
     if (Control.mode === 0) {
@@ -81,5 +111,16 @@ class Control {
       Main.Camera.position.addInPlace(move);
       Main.Camera.position.y = Math.max(Main.Camera.position.y, 2);
     }
+  }
+
+  public static CreatePreviewBrick(): void {
+    Control.previewBrick = new BABYLON.Mesh("PreviewBrick", Main.Scene);
+    Control.previewBrick.isPickable = false;
+    BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
+    let previewBrickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
+    previewBrickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+    previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+    previewBrickMaterial.alpha = 0.5;
+    Control.previewBrick.material = previewBrickMaterial;
   }
 }

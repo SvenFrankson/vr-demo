@@ -8,16 +8,11 @@ class Main {
   public static Camera: BABYLON.WebVRFreeCamera;
   public static Light: BABYLON.Light;
 
-  public static neCube: BABYLON.Mesh;
-  public static nwCube: BABYLON.Mesh;
-  public static seCube: BABYLON.Mesh;
-  public static swCube: BABYLON.Mesh;
-
   public static moveIcon: Icon;
   public static buildIcon: Icon;
   public static deleteIcon: Icon;
 
-  public static forward: boolean;
+  public static cursor: BABYLON.Mesh;
 
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -31,7 +26,7 @@ class Main {
       console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
       Main.Camera = new BABYLON.WebVRFreeCamera(
         "VRCamera",
-        new BABYLON.Vector3(0, 2, 0),
+        new BABYLON.Vector3(16 * Config.XSize, 2, 16 * Config.ZSize),
         Main.Scene
       );
     } else {
@@ -50,32 +45,20 @@ class Main {
       };
     };
 
+    Main.CreateCursor();
+    Control.CreatePreviewBrick();
+
     Main.Light = new BABYLON.HemisphericLight("AmbientLight", BABYLON.Axis.Y, Main.Scene);
     Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
     Main.Light.specular = new BABYLON.Color3(1, 1, 1);
 
     // debug purpose only under this line
-    let ground: BABYLON.Mesh = BABYLON.MeshBuilder.CreateGround("Ground", {width: 10, height: 10}, Main.Scene);
+    let ground: BABYLON.Mesh = new BABYLON.Mesh("Ground", Main.Scene);
+    BrickData.CubicalData(32, 1, 32).applyToMesh(ground);
     let groundMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
-    groundMaterial.specularColor.copyFromFloats(0, 0, 0);
+    groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
+    groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
     ground.material = groundMaterial;
-
-    Main.neCube = BABYLON.MeshBuilder.CreateBox("NECube", 1, Main.Scene);
-    Main.neCube.position.copyFromFloats(4.5, 0.5, 4.5);
-    Main.neCube.material = new BABYLON.StandardMaterial("NECubeMaterial", Main.Scene);
-    Main.neCube.scaling.y = 5;
-
-    Main.nwCube = BABYLON.MeshBuilder.CreateBox("NWCube", 1, Main.Scene);
-    Main.nwCube.position.copyFromFloats(-4.5, 0.5, 4.5);
-    Main.nwCube.material = new BABYLON.StandardMaterial("NWCubeMaterial", Main.Scene);
-
-    Main.seCube = BABYLON.MeshBuilder.CreateBox("SECube", 1, Main.Scene);
-    Main.seCube.position.copyFromFloats(4.5, 0.5, -4.5);
-    Main.seCube.material = new BABYLON.StandardMaterial("SECubeMaterial", Main.Scene);
-
-    Main.swCube = BABYLON.MeshBuilder.CreateBox("SWCube", 1, Main.Scene);
-    Main.swCube.position.copyFromFloats(-4.5, 0.5, -4.5);
-    Main.swCube.material = new BABYLON.StandardMaterial("SWCubeMaterial", Main.Scene);
 
     Main.moveIcon = new Icon(
       "move-icon",
@@ -116,48 +99,24 @@ class Main {
       Main.Engine.resize();
     });
   }
+
+  public static CreateCursor(): void {
+    Main.cursor = BABYLON.MeshBuilder.CreateSphere("Cursor", {diameter: 0.4}, Main.Scene);
+    Main.cursor.position.copyFromFloats(0, 0, 10);
+    Main.cursor.parent = Main.Camera;
+    let cursorMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("CursorMaterial", Main.Scene);
+    cursorMaterial.diffuseColor.copyFromFloats(0, 0, 0);
+    cursorMaterial.specularColor.copyFromFloats(0, 0, 0);
+    cursorMaterial.emissiveColor.copyFromFloats(1, 1, 1);
+    Main.cursor.material = cursorMaterial;
+    Main.cursor.renderOutline = true;
+    Main.cursor.outlineColor.copyFromFloats(0, 0, 0);
+    Main.cursor.outlineWidth = 0.05;
+  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
   let game : Main = new Main("render-canvas");
   game.createScene();
   game.animate();
-
-  /*
-  Main.Canvas.addEventListener("touchstart", (event: TouchEvent) => {
-    Interact.ButtonDown();
-  });
-
-  Main.Canvas.addEventListener("touchend", (event: Event) => {
-    Utils.RequestFullscreen();
-    if (Main.neCube.material instanceof BABYLON.StandardMaterial) {
-      Main.neCube.material.diffuseColor.copyFromFloats(
-        Math.random(),
-        Math.random(),
-        Math.random()
-      );
-    }
-    if (Main.nwCube.material instanceof BABYLON.StandardMaterial) {
-      Main.nwCube.material.diffuseColor.copyFromFloats(
-        Math.random(),
-        Math.random(),
-        Math.random()
-      );
-    }
-    if (Main.seCube.material instanceof BABYLON.StandardMaterial) {
-      Main.seCube.material.diffuseColor.copyFromFloats(
-        Math.random(),
-        Math.random(),
-        Math.random()
-      );
-    }
-    if (Main.swCube.material instanceof BABYLON.StandardMaterial) {
-      Main.swCube.material.diffuseColor.copyFromFloats(
-        Math.random(),
-        Math.random(),
-        Math.random()
-      );
-    }
-  });
-  */
 });

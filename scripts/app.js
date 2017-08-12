@@ -1,4 +1,279 @@
+class Brick extends BABYLON.Mesh {
+    constructor(coordinates) {
+        console.log("Add new Brick at " + coordinates.x + " " + coordinates.y + " " + coordinates.z);
+        super("Brick", Main.Scene);
+        BrickData.CubicalData(1, 3, 1).applyToMesh(this);
+        this.position = Brick.BrickCoordinatesToWorldPos(coordinates);
+        Brick.instances.push(this);
+    }
+    static WorldPosToBrickCoordinates(worldPosition) {
+        let coordinates = BABYLON.Vector3.Zero();
+        coordinates.x = Math.round(worldPosition.x / Config.XSize);
+        coordinates.y = Math.round(worldPosition.y / Config.YSize);
+        coordinates.z = Math.round(worldPosition.z / Config.ZSize);
+        return coordinates;
+    }
+    static BrickCoordinatesToWorldPos(coordinates) {
+        let worldPosition = BABYLON.Vector3.Zero();
+        worldPosition.x = coordinates.x * Config.XSize;
+        worldPosition.y = coordinates.y * Config.YSize;
+        worldPosition.z = coordinates.z * Config.ZSize;
+        return worldPosition;
+    }
+    Hightlight(color) {
+        this.renderOutline = true;
+        this.outlineColor.copyFrom(color);
+        this.outlineWidth = 0.02;
+    }
+    Unlit() {
+        this.renderOutline = false;
+    }
+    static UnlitAll() {
+        Brick.instances.forEach((i) => {
+            i.Unlit();
+        });
+    }
+}
+Brick.instances = [];
+class BrickData {
+    static VertexDataFromJSON(jsonData) {
+        let tmp = JSON.parse(jsonData);
+        let vertexData = new BABYLON.VertexData();
+        vertexData.positions = tmp.positions;
+        vertexData.normals = tmp.normals;
+        for (let i = 0; i < vertexData.normals.length; i++) {
+            vertexData.positions[i] = vertexData.positions[i] / 100.0;
+            vertexData.normals[i] = vertexData.normals[i] / 100.0;
+        }
+        vertexData.indices = tmp.indices;
+        return vertexData;
+    }
+    static CubicalData(width, height, length) {
+        let cubeData = new BABYLON.VertexData();
+        let vertices = new Array();
+        let positions = new Array();
+        let indices = new Array();
+        vertices[0] = new Array(-0.5, -0.5, -0.5);
+        vertices[1] = new Array(-0.5 + width, -0.5, -0.5);
+        vertices[2] = new Array(-0.5 + width, -0.5, -0.5 + length);
+        vertices[3] = new Array(-0.5, -0.5, -0.5 + length);
+        vertices[4] = new Array(-0.5, -0.5 + height, -0.5);
+        vertices[5] = new Array(-0.5 + width, -0.5 + height, -0.5);
+        vertices[6] = new Array(-0.5 + width, -0.5 + height, -0.5 + length);
+        vertices[7] = new Array(-0.5, -0.5 + height, -0.5 + length);
+        for (let i = 0; i < vertices.length; i++) {
+            vertices[i][0] = vertices[i][0] * Config.XSize;
+            vertices[i][1] = vertices[i][1] * Config.YSize;
+            vertices[i][2] = vertices[i][2] * Config.ZSize;
+        }
+        BrickData.PushQuad(vertices, 0, 1, 2, 3, positions, indices);
+        BrickData.PushQuad(vertices, 1, 5, 6, 2, positions, indices);
+        BrickData.PushQuad(vertices, 5, 4, 7, 6, positions, indices);
+        BrickData.PushQuad(vertices, 0, 4, 5, 1, positions, indices);
+        BrickData.PushQuad(vertices, 3, 7, 4, 0, positions, indices);
+        BrickData.PushQuad(vertices, 2, 6, 7, 3, positions, indices);
+        for (let i = 0; i < width; i++) {
+            for (let k = 0; k < length; k++) {
+                BrickData.PushSlot(i, height - 1, k, positions, indices);
+            }
+        }
+        let normals = new Array();
+        BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+        cubeData.positions = positions;
+        cubeData.indices = indices;
+        cubeData.normals = normals;
+        return cubeData;
+    }
+    static SlideData(width, height, length) {
+        let slideData = new BABYLON.VertexData();
+        let vertices = new Array();
+        let positions = new Array();
+        let indices = new Array();
+        vertices[0] = new Array(-0.5, -0.5, -0.5);
+        vertices[1] = new Array(-0.5 + width / 2, -0.5, -0.5);
+        vertices[2] = new Array(-0.5 + width / 2, -0.5, -0.5 + length);
+        vertices[3] = new Array(-0.5, -0.5, -0.5 + length);
+        vertices[4] = new Array(-0.5, -0.5 + height, -0.5);
+        vertices[5] = new Array(-0.5 + width / 2, -0.5 + height, -0.5);
+        vertices[6] = new Array(-0.5 + width / 2, -0.5 + height, -0.5 + length);
+        vertices[7] = new Array(-0.5, -0.5 + height, -0.5 + length);
+        vertices[8] = new Array(-0.5 + width, -0.5, -0.5);
+        vertices[9] = new Array(-0.5 + width, -0.5, -0.5 + length);
+        vertices[10] = new Array(-0.5 + width, 0.5, -0.5);
+        vertices[11] = new Array(-0.5 + width, 0.5, -0.5 + length);
+        for (let i = 0; i < vertices.length; i++) {
+            vertices[i][0] = vertices[i][0] * Config.XSize;
+            vertices[i][1] = vertices[i][1] * Config.YSize;
+            vertices[i][2] = vertices[i][2] * Config.ZSize;
+        }
+        BrickData.PushQuad(vertices, 0, 1, 2, 3, positions, indices);
+        BrickData.PushQuad(vertices, 5, 4, 7, 6, positions, indices);
+        BrickData.PushQuad(vertices, 0, 4, 5, 1, positions, indices);
+        BrickData.PushQuad(vertices, 3, 7, 4, 0, positions, indices);
+        BrickData.PushQuad(vertices, 2, 6, 7, 3, positions, indices);
+        BrickData.PushQuad(vertices, 8, 10, 11, 9, positions, indices);
+        BrickData.PushQuad(vertices, 5, 6, 11, 10, positions, indices);
+        BrickData.PushQuad(vertices, 1, 8, 9, 2, positions, indices);
+        BrickData.PushQuad(vertices, 1, 5, 10, 8, positions, indices);
+        BrickData.PushQuad(vertices, 9, 11, 6, 2, positions, indices);
+        for (let i = 0; i < width / 2; i++) {
+            for (let k = 0; k < length; k++) {
+                BrickData.PushSlot(i, height - 1, k, positions, indices);
+            }
+        }
+        let normals = new Array();
+        BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+        slideData.positions = positions;
+        slideData.indices = indices;
+        slideData.normals = normals;
+        return slideData;
+    }
+    static GroundData() {
+        let cubeData = new BABYLON.VertexData();
+        let vertices = new Array();
+        let positions = new Array();
+        let indices = new Array();
+        vertices[0] = new Array(-10.5, -0.5, -10.5);
+        vertices[1] = new Array(10.5, -0.5, -10.5);
+        vertices[2] = new Array(10.5, -0.5, 10.5);
+        vertices[3] = new Array(-10.5, -0.5, 10.5);
+        vertices[4] = new Array(-10.5, 0.5, -10.5);
+        vertices[5] = new Array(10.5, 0.5, -10.5);
+        vertices[6] = new Array(10.5, 0.5, 10.5);
+        vertices[7] = new Array(-10.5, 0.5, 10.5);
+        for (let i = 0; i < vertices.length; i++) {
+            vertices[i][0] = vertices[i][0] * Config.XSize;
+            vertices[i][1] = vertices[i][1] * Config.YSize;
+            vertices[i][2] = vertices[i][2] * Config.ZSize;
+        }
+        BrickData.PushQuad(vertices, 0, 1, 2, 3, positions, indices);
+        BrickData.PushQuad(vertices, 1, 5, 6, 2, positions, indices);
+        BrickData.PushQuad(vertices, 5, 4, 7, 6, positions, indices);
+        BrickData.PushQuad(vertices, 0, 4, 5, 1, positions, indices);
+        BrickData.PushQuad(vertices, 3, 7, 4, 0, positions, indices);
+        BrickData.PushQuad(vertices, 2, 6, 7, 3, positions, indices);
+        for (let i = -10; i <= 10; i++) {
+            for (let k = -10; k <= 10; k++) {
+                BrickData.PushSlot(i, 0, k, positions, indices);
+            }
+        }
+        let normals = new Array();
+        BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+        cubeData.positions = positions;
+        cubeData.indices = indices;
+        cubeData.normals = normals;
+        return cubeData;
+    }
+    static PushSlot(x, y, z, positions, indices) {
+        let vertices = new Array();
+        vertices[0] = new Array(-0.1, 0.5, -0.25);
+        vertices[1] = new Array(0.1, 0.5, -0.25);
+        vertices[2] = new Array(0.25, 0.5, -0.1);
+        vertices[3] = new Array(0.25, 0.5, 0.1);
+        vertices[4] = new Array(0.1, 0.5, 0.25);
+        vertices[5] = new Array(-0.1, 0.5, 0.25);
+        vertices[6] = new Array(-0.25, 0.5, 0.1);
+        vertices[7] = new Array(-0.25, 0.5, -0.1);
+        vertices[8] = new Array(-0.1, 1.1, -0.25);
+        vertices[9] = new Array(0.1, 1.1, -0.25);
+        vertices[10] = new Array(0.25, 1.1, -0.1);
+        vertices[11] = new Array(0.25, 1.1, 0.1);
+        vertices[12] = new Array(0.1, 1.1, 0.25);
+        vertices[13] = new Array(-0.1, 1.1, 0.25);
+        vertices[14] = new Array(-0.25, 1.1, 0.1);
+        vertices[15] = new Array(-0.25, 1.1, -0.1);
+        vertices[16] = new Array(0, 1.1, 0);
+        for (let i = 0; i < vertices.length; i++) {
+            vertices[i][0] = (vertices[i][0] + x) * Config.XSize;
+            vertices[i][1] = (vertices[i][1] + y) * Config.YSize;
+            vertices[i][2] = (vertices[i][2] + z) * Config.ZSize;
+        }
+        BrickData.PushQuad(vertices, 0, 8, 9, 1, positions, indices);
+        BrickData.PushQuad(vertices, 1, 9, 10, 2, positions, indices);
+        BrickData.PushQuad(vertices, 2, 10, 11, 3, positions, indices);
+        BrickData.PushQuad(vertices, 3, 11, 12, 4, positions, indices);
+        BrickData.PushQuad(vertices, 4, 12, 13, 5, positions, indices);
+        BrickData.PushQuad(vertices, 5, 13, 14, 6, positions, indices);
+        BrickData.PushQuad(vertices, 6, 14, 15, 7, positions, indices);
+        BrickData.PushQuad(vertices, 7, 15, 8, 0, positions, indices);
+        BrickData.PushTriangle(vertices, 8, 9, 16, positions, indices);
+        BrickData.PushTriangle(vertices, 9, 10, 16, positions, indices);
+        BrickData.PushTriangle(vertices, 10, 11, 16, positions, indices);
+        BrickData.PushTriangle(vertices, 11, 12, 16, positions, indices);
+        BrickData.PushTriangle(vertices, 12, 13, 16, positions, indices);
+        BrickData.PushTriangle(vertices, 13, 14, 16, positions, indices);
+        BrickData.PushTriangle(vertices, 14, 15, 16, positions, indices);
+        BrickData.PushTriangle(vertices, 15, 8, 16, positions, indices);
+    }
+    static PushTriangle(vertices, a, b, c, positions, indices) {
+        let index = positions.length / 3;
+        for (let n in vertices[a]) {
+            if (vertices[a] != null) {
+                positions.push(vertices[a][n]);
+            }
+        }
+        for (let n in vertices[b]) {
+            if (vertices[b] != null) {
+                positions.push(vertices[b][n]);
+            }
+        }
+        for (let n in vertices[c]) {
+            if (vertices[c] != null) {
+                positions.push(vertices[c][n]);
+            }
+        }
+        indices.push(index);
+        indices.push(index + 1);
+        indices.push(index + 2);
+    }
+    static PushQuad(vertices, a, b, c, d, positions, indices) {
+        let index = positions.length / 3;
+        for (let n in vertices[a]) {
+            if (vertices[a] != null) {
+                positions.push(vertices[a][n]);
+            }
+        }
+        for (let n in vertices[b]) {
+            if (vertices[b] != null) {
+                positions.push(vertices[b][n]);
+            }
+        }
+        for (let n in vertices[c]) {
+            if (vertices[c] != null) {
+                positions.push(vertices[c][n]);
+            }
+        }
+        for (let n in vertices[d]) {
+            if (vertices[d] != null) {
+                positions.push(vertices[d][n]);
+            }
+        }
+        indices.push(index);
+        indices.push(index + 2);
+        indices.push(index + 1);
+        indices.push(index + 3);
+        indices.push(index + 2);
+        indices.push(index);
+    }
+}
+class Config {
+}
+Config.XSize = 0.7;
+Config.YSize = 0.3;
+Config.ZSize = 0.7;
 class Control {
+    static get mode() {
+        return Control._mode;
+    }
+    static set mode(v) {
+        Control._mode = v;
+        if (Control.mode === 1) {
+            Control.previewBrick.isVisible = true;
+        }
+        else {
+            Control.previewBrick.isVisible = false;
+        }
+    }
     static onPointerDown() {
         let t = (new Date()).getTime();
         if ((t - Control._lastPointerDownTime) < Control.DOUBLEPOINTERDELAY) {
@@ -7,7 +282,7 @@ class Control {
         }
         Control._lastPointerDownTime = t;
         let ray = Main.Camera.getForwardRay();
-        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return true; });
+        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return mesh !== Main.cursor && mesh !== Control.previewBrick; });
         if (pick.hit) {
             Control._meshAimed = pick.pickedMesh;
             if (Control._meshAimed.parent instanceof Icon) {
@@ -20,16 +295,19 @@ class Control {
         }
         if (Control.mode === 1) {
             if (pick.hit) {
-                let newBox = BABYLON.MeshBuilder.CreateBox("New", 1, Main.Scene);
-                newBox.position.copyFrom(pick.pickedPoint);
-                newBox.position.x = Math.round(newBox.position.x);
-                newBox.position.y = Math.round(newBox.position.y);
-                newBox.position.z = Math.round(newBox.position.z);
+                let correctedPickPoint = BABYLON.Vector3.Zero();
+                correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
+                let coordinates = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
+                let newBrick = new Brick(coordinates);
+                let brickMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
+                brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+                brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+                newBrick.material = brickMaterial;
             }
         }
         if (Control.mode === 2) {
             if (pick.hit) {
-                if (pick.pickedMesh) {
+                if (pick.pickedMesh instanceof Brick) {
                     pick.pickedMesh.dispose();
                 }
             }
@@ -44,13 +322,29 @@ class Control {
         }
     }
     static Update() {
+        Control.previewBrick.isVisible = false;
         Icon.UnlitAll();
+        Brick.UnlitAll();
         let ray = Main.Camera.getForwardRay();
-        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return true; });
+        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return mesh !== Main.cursor && mesh !== Control.previewBrick; });
         if (pick.hit) {
             Control._meshAimed = pick.pickedMesh;
             if (Control._meshAimed.parent instanceof Icon) {
                 Control._meshAimed.parent.Hightlight();
+            }
+            else if (Control._meshAimed instanceof Brick) {
+                if (Control.mode === 1) {
+                    Control._meshAimed.Hightlight(BABYLON.Color3.White());
+                }
+                if (Control.mode === 2) {
+                    Control._meshAimed.Hightlight(BABYLON.Color3.Red());
+                }
+            }
+            if (Control.mode === 1) {
+                let correctedPickPoint = BABYLON.Vector3.Zero();
+                correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
+                Control.previewBrick.isVisible = true;
+                Control.previewBrick.position = Brick.BrickCoordinatesToWorldPos(Brick.WorldPosToBrickCoordinates(correctedPickPoint));
             }
         }
         if (Control.mode === 0) {
@@ -65,11 +359,21 @@ class Control {
             Main.Camera.position.y = Math.max(Main.Camera.position.y, 2);
         }
     }
+    static CreatePreviewBrick() {
+        Control.previewBrick = new BABYLON.Mesh("PreviewBrick", Main.Scene);
+        Control.previewBrick.isPickable = false;
+        BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
+        let previewBrickMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
+        previewBrickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+        previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+        previewBrickMaterial.alpha = 0.5;
+        Control.previewBrick.material = previewBrickMaterial;
+    }
 }
 Control.DOUBLEPOINTERDELAY = 500;
 Control._lastPointerDownTime = 0;
 Control._cameraSpeed = 0;
-Control.mode = 0;
+Control._mode = 0;
 class Icon extends BABYLON.Mesh {
     constructor(picture, position, camera, scale = 1, onActivate = () => { return; }) {
         super(picture, camera.getScene());
@@ -206,7 +510,7 @@ class Main {
         Main.Scene = new BABYLON.Scene(Main.Engine);
         if (navigator.getVRDisplays) {
             console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
-            Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(0, 2, 0), Main.Scene);
+            Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(16 * Config.XSize, 2, 16 * Config.ZSize), Main.Scene);
         }
         else {
             console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
@@ -223,26 +527,17 @@ class Main {
                 Control.onPointerUp();
             };
         };
+        Main.CreateCursor();
+        Control.CreatePreviewBrick();
         Main.Light = new BABYLON.HemisphericLight("AmbientLight", BABYLON.Axis.Y, Main.Scene);
         Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
         Main.Light.specular = new BABYLON.Color3(1, 1, 1);
-        let ground = BABYLON.MeshBuilder.CreateGround("Ground", { width: 10, height: 10 }, Main.Scene);
+        let ground = new BABYLON.Mesh("Ground", Main.Scene);
+        BrickData.CubicalData(32, 1, 32).applyToMesh(ground);
         let groundMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
-        groundMaterial.specularColor.copyFromFloats(0, 0, 0);
+        groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
+        groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         ground.material = groundMaterial;
-        Main.neCube = BABYLON.MeshBuilder.CreateBox("NECube", 1, Main.Scene);
-        Main.neCube.position.copyFromFloats(4.5, 0.5, 4.5);
-        Main.neCube.material = new BABYLON.StandardMaterial("NECubeMaterial", Main.Scene);
-        Main.neCube.scaling.y = 5;
-        Main.nwCube = BABYLON.MeshBuilder.CreateBox("NWCube", 1, Main.Scene);
-        Main.nwCube.position.copyFromFloats(-4.5, 0.5, 4.5);
-        Main.nwCube.material = new BABYLON.StandardMaterial("NWCubeMaterial", Main.Scene);
-        Main.seCube = BABYLON.MeshBuilder.CreateBox("SECube", 1, Main.Scene);
-        Main.seCube.position.copyFromFloats(4.5, 0.5, -4.5);
-        Main.seCube.material = new BABYLON.StandardMaterial("SECubeMaterial", Main.Scene);
-        Main.swCube = BABYLON.MeshBuilder.CreateBox("SWCube", 1, Main.Scene);
-        Main.swCube.position.copyFromFloats(-4.5, 0.5, -4.5);
-        Main.swCube.material = new BABYLON.StandardMaterial("SWCubeMaterial", Main.Scene);
         Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-0.7, -1.5, 0.7), Main.Camera, 0.5, () => {
             Control.mode = 0;
         });
@@ -261,6 +556,19 @@ class Main {
         window.addEventListener("resize", () => {
             Main.Engine.resize();
         });
+    }
+    static CreateCursor() {
+        Main.cursor = BABYLON.MeshBuilder.CreateSphere("Cursor", { diameter: 0.4 }, Main.Scene);
+        Main.cursor.position.copyFromFloats(0, 0, 10);
+        Main.cursor.parent = Main.Camera;
+        let cursorMaterial = new BABYLON.StandardMaterial("CursorMaterial", Main.Scene);
+        cursorMaterial.diffuseColor.copyFromFloats(0, 0, 0);
+        cursorMaterial.specularColor.copyFromFloats(0, 0, 0);
+        cursorMaterial.emissiveColor.copyFromFloats(1, 1, 1);
+        Main.cursor.material = cursorMaterial;
+        Main.cursor.renderOutline = true;
+        Main.cursor.outlineColor.copyFromFloats(0, 0, 0);
+        Main.cursor.outlineWidth = 0.05;
     }
 }
 window.addEventListener("DOMContentLoaded", () => {
