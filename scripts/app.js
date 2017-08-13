@@ -320,6 +320,27 @@ class Control {
             Control.previewBrick.isVisible = false;
         }
     }
+    static get width() {
+        return this._width;
+    }
+    static set width(v) {
+        this._width = v;
+        BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
+    }
+    static get height() {
+        return this._height;
+    }
+    static set height(v) {
+        this._height = v;
+        BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
+    }
+    static get length() {
+        return this._length;
+    }
+    static set length(v) {
+        this._length = v;
+        BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
+    }
     static onPointerDown() {
         let t = (new Date()).getTime();
         if ((t - Control._lastPointerDownTime) < Control.DOUBLEPOINTERDELAY) {
@@ -345,7 +366,7 @@ class Control {
                 let correctedPickPoint = BABYLON.Vector3.Zero();
                 correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
                 let coordinates = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
-                let newBrick = Brick.TryAdd(coordinates, 2, 3, 2);
+                let newBrick = Brick.TryAdd(coordinates, this.width, this.height, this.length);
                 if (newBrick) {
                     let brickMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
                     brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
@@ -415,7 +436,7 @@ class Control {
     static CreatePreviewBrick() {
         Control.previewBrick = new BABYLON.Mesh("PreviewBrick", Main.Scene);
         Control.previewBrick.isPickable = false;
-        BrickData.CubicalData(2, 3, 2).applyToMesh(Control.previewBrick);
+        BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
         let previewBrickMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
         previewBrickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
         previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
@@ -427,6 +448,9 @@ Control.DOUBLEPOINTERDELAY = 500;
 Control._lastPointerDownTime = 0;
 Control._cameraSpeed = 0;
 Control._mode = 0;
+Control._width = 1;
+Control._height = 1;
+Control._length = 1;
 class Icon extends BABYLON.Mesh {
     constructor(picture, position, camera, scale = 1, onActivate = () => { return; }) {
         super(picture, camera.getScene());
@@ -618,16 +642,27 @@ class Main {
             Main.buildIcon.ShowSmallIcons();
             Control.mode = 4;
         });
-        let bsmall = new SmallIcon("", new BABYLON.Vector3(0, 1.2, 0), Main.buildIcon, 1, () => {
+        Main.buildIcon.AddSmallIcon(new SmallIcon("flat-brick", new BABYLON.Vector3(0, 1.2, 0), Main.buildIcon, 1, () => {
             Main.buildIcon.HideSmallIcons();
+            Control.width = 1;
+            Control.height = 1;
+            Control.length = 1;
             Control.mode = 1;
-        });
-        Main.buildIcon.AddSmallIcon(bsmall);
-        let bsmall2 = new SmallIcon("", new BABYLON.Vector3(0, 2.2, 0), Main.buildIcon, 1, () => {
+        }));
+        Main.buildIcon.AddSmallIcon(new SmallIcon("long-brick", new BABYLON.Vector3(0, 2.2, 0), Main.buildIcon, 1, () => {
             Main.buildIcon.HideSmallIcons();
+            Control.width = 2;
+            Control.height = 3;
+            Control.length = 1;
             Control.mode = 1;
-        });
-        Main.buildIcon.AddSmallIcon(bsmall2);
+        }));
+        Main.buildIcon.AddSmallIcon(new SmallIcon("large-brick", new BABYLON.Vector3(0, 3.2, 0), Main.buildIcon, 1, () => {
+            Main.buildIcon.HideSmallIcons();
+            Control.width = 4;
+            Control.height = 3;
+            Control.length = 2;
+            Control.mode = 1;
+        }));
         Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(0.7, -1.5, 0.4), Main.Camera, 0.5, () => {
             Control.mode = 2;
         });

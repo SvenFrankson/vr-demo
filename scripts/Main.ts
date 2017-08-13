@@ -81,28 +81,45 @@ class Main {
         Control.mode = 4;
       }
     );
-    let bsmall: SmallIcon = new SmallIcon(
-      "",
+    Main.buildIcon.AddSmallIcon(new SmallIcon(
+      "flat-brick",
       new BABYLON.Vector3(0, 1.2, 0),
       Main.buildIcon,
       1,
       () => {
         Main.buildIcon.HideSmallIcons();
+        Control.width = 1;
+        Control.height = 1;
+        Control.length = 1;
         Control.mode = 1;
       }
-    );
-    Main.buildIcon.AddSmallIcon(bsmall);
-    let bsmall2: SmallIcon = new SmallIcon(
-      "",
+    ));
+    Main.buildIcon.AddSmallIcon(new SmallIcon(
+      "long-brick",
       new BABYLON.Vector3(0, 2.2, 0),
       Main.buildIcon,
       1,
       () => {
         Main.buildIcon.HideSmallIcons();
+        Control.width = 2;
+        Control.height = 3;
+        Control.length = 1;
         Control.mode = 1;
       }
-    );
-    Main.buildIcon.AddSmallIcon(bsmall2);
+    ));
+    Main.buildIcon.AddSmallIcon(new SmallIcon(
+      "large-brick",
+      new BABYLON.Vector3(0, 3.2, 0),
+      Main.buildIcon,
+      1,
+      () => {
+        Main.buildIcon.HideSmallIcons();
+        Control.width = 4;
+        Control.height = 3;
+        Control.length = 2;
+        Control.mode = 1;
+      }
+    ));
     Main.deleteIcon = new Icon(
       "delete-icon",
       new BABYLON.Vector3(0.7, -1.5, 0.4),

@@ -15,6 +15,30 @@ class Control {
     }
   }
   public static previewBrick: BABYLON.Mesh;
+  private static _width: number = 1;
+  public static get width(): number {
+    return this._width;
+  }
+  public static set width(v: number) {
+    this._width = v;
+    BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
+  }
+  private static _height: number = 1;
+  public static get height(): number {
+    return this._height;
+  }
+  public static set height(v: number) {
+    this._height = v;
+    BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
+  }
+  private static _length: number = 1;
+  public static get length(): number {
+    return this._length;
+  }
+  public static set length(v: number) {
+    this._length = v;
+    BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
+  }
 
   public static onPointerDown(): void {
     let t: number = (new Date()).getTime();
@@ -47,7 +71,7 @@ class Control {
         let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
         correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
         let coordinates: BABYLON.Vector3 = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
-        let newBrick: Brick = Brick.TryAdd(coordinates, 2, 3, 2);
+        let newBrick: Brick = Brick.TryAdd(coordinates, this.width, this.height, this.length);
         if (newBrick) {
           let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
           brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
@@ -127,7 +151,7 @@ class Control {
   public static CreatePreviewBrick(): void {
     Control.previewBrick = new BABYLON.Mesh("PreviewBrick", Main.Scene);
     Control.previewBrick.isPickable = false;
-    BrickData.CubicalData(2, 3, 2).applyToMesh(Control.previewBrick);
+    BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
     let previewBrickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
     previewBrickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
     previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
