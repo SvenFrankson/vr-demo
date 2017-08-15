@@ -17,11 +17,12 @@ class Main {
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
     Main.Engine = new BABYLON.Engine(Main.Canvas, true);
-    Main.Engine.setHardwareScalingLevel(0.5);
+    Main.Engine.setHardwareScalingLevel(0.25);
   }
 
-  createScene(): void {
+  CreateScene(): void {
     Main.Scene = new BABYLON.Scene(Main.Engine);
+    Main.Scene.registerBeforeRender(Control.Update);
 
     if (navigator.getVRDisplays) {
       console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
@@ -131,9 +132,34 @@ class Main {
     );
   }
 
+  public CreateDevShowBrickScene(): void {
+    Main.Scene = new BABYLON.Scene(Main.Engine);
+    Main.Scene.clearColor.copyFromFloats(1, 1, 1, 0.5);
+    let arcRotateCamera: BABYLON.ArcRotateCamera = new BABYLON.ArcRotateCamera(
+      "ArcRotateCamera",
+      0, 0, 1,
+      BABYLON.Vector3.Zero(),
+      Main.Scene
+    );
+    arcRotateCamera.setPosition(new BABYLON.Vector3(4, 3, -5));
+    arcRotateCamera.attachControl(Main.Canvas);
+    arcRotateCamera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+    let cameraFrameSize: number = 3;
+    arcRotateCamera.orthoTop = cameraFrameSize / 2;
+    arcRotateCamera.orthoBottom = - cameraFrameSize / 2;
+    arcRotateCamera.orthoLeft = - cameraFrameSize;
+    arcRotateCamera.orthoRight = cameraFrameSize;
+    let light: BABYLON.Light = new BABYLON.DirectionalLight("Light", new BABYLON.Vector3(-0.75, -1, 0.5), Main.Scene);
+    light.intensity = 1.5;
+    let brick: PrettyBrick = new PrettyBrick(8, 3, 2, Main.Scene);
+    let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("DevShowBrickMaterial", Main.Scene);
+    brickMaterial.diffuseColor.copyFromFloats(1, 1, 1);
+    brickMaterial.specularColor.copyFromFloats(0, 0, 0);
+    brick.material = brickMaterial;
+  }
+
   public animate(): void {
     Main.Engine.runRenderLoop(() => {
-      Control.Update();
       Main.Scene.render();
     });
 
@@ -159,6 +185,6 @@ class Main {
 
 window.addEventListener("DOMContentLoaded", () => {
   let game : Main = new Main("render-canvas");
-  game.createScene();
+  game.CreateScene();
   game.animate();
 });

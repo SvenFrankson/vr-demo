@@ -600,10 +600,11 @@ class Main {
     constructor(canvasElement) {
         Main.Canvas = document.getElementById(canvasElement);
         Main.Engine = new BABYLON.Engine(Main.Canvas, true);
-        Main.Engine.setHardwareScalingLevel(0.5);
+        Main.Engine.setHardwareScalingLevel(0.25);
     }
-    createScene() {
+    CreateScene() {
         Main.Scene = new BABYLON.Scene(Main.Engine);
+        Main.Scene.registerBeforeRender(Control.Update);
         if (navigator.getVRDisplays) {
             console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
             Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2), Main.Scene);
@@ -667,9 +668,28 @@ class Main {
             Control.mode = 2;
         });
     }
+    CreateDevShowBrickScene() {
+        Main.Scene = new BABYLON.Scene(Main.Engine);
+        Main.Scene.clearColor.copyFromFloats(1, 1, 1, 0.5);
+        let arcRotateCamera = new BABYLON.ArcRotateCamera("ArcRotateCamera", 0, 0, 1, BABYLON.Vector3.Zero(), Main.Scene);
+        arcRotateCamera.setPosition(new BABYLON.Vector3(4, 3, -5));
+        arcRotateCamera.attachControl(Main.Canvas);
+        arcRotateCamera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+        let cameraFrameSize = 3;
+        arcRotateCamera.orthoTop = cameraFrameSize / 2;
+        arcRotateCamera.orthoBottom = -cameraFrameSize / 2;
+        arcRotateCamera.orthoLeft = -cameraFrameSize;
+        arcRotateCamera.orthoRight = cameraFrameSize;
+        let light = new BABYLON.DirectionalLight("Light", new BABYLON.Vector3(-0.75, -1, 0.5), Main.Scene);
+        light.intensity = 1.5;
+        let brick = new PrettyBrick(8, 3, 2, Main.Scene);
+        let brickMaterial = new BABYLON.StandardMaterial("DevShowBrickMaterial", Main.Scene);
+        brickMaterial.diffuseColor.copyFromFloats(1, 1, 1);
+        brickMaterial.specularColor.copyFromFloats(0, 0, 0);
+        brick.material = brickMaterial;
+    }
     animate() {
         Main.Engine.runRenderLoop(() => {
-            Control.Update();
             Main.Scene.render();
         });
         window.addEventListener("resize", () => {
@@ -692,7 +712,7 @@ class Main {
 }
 window.addEventListener("DOMContentLoaded", () => {
     let game = new Main("render-canvas");
-    game.createScene();
+    game.CreateScene();
     game.animate();
 });
 class VRMath {
@@ -718,6 +738,35 @@ class VRMath {
             angle = -angle;
         }
         return angle;
+    }
+}
+class PrettyBrick extends BABYLON.Mesh {
+    constructor(width, height, length, scene) {
+        super("PrettyBrick", scene);
+        let box = BABYLON.MeshBuilder.CreateBox("Box", {
+            width: width * Config.XSize,
+            height: height * Config.YSize,
+            depth: length * Config.ZSize
+        }, scene);
+        box.renderOutline = true;
+        box.outlineColor.copyFromFloats(0, 0, 0);
+        box.outlineWidth = 0.05;
+        box.parent = this;
+        for (let i = 0; i < width; i++) {
+            for (let j = 0; j < length; j++) {
+                let plot = BABYLON.MeshBuilder.CreateCylinder("Plot", {
+                    height: Config.YSize / 2,
+                    diameter: Config.XSize / 2
+                }, scene);
+                plot.position.x = i * Config.XSize + Config.XSize / 2 - width * Config.XSize / 2;
+                plot.position.y = height * Config.YSize - height * Config.YSize / 2 + Config.YSize / 4;
+                plot.position.z = j * Config.ZSize + Config.ZSize / 2 - length * Config.ZSize / 2;
+                plot.renderOutline = true;
+                plot.outlineColor.copyFromFloats(0, 0, 0);
+                plot.outlineWidth = 0.05;
+                plot.parent = this;
+            }
+        }
     }
 }
 class SmallIcon extends BABYLON.Mesh {
