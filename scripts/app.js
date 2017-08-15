@@ -352,8 +352,11 @@ class Control {
         let pick = Main.Scene.pickWithRay(ray, (mesh) => { return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible; });
         if (pick.hit) {
             Control._meshAimed = pick.pickedMesh;
-            if (Control._meshAimed.parent instanceof Icon ||
-                Control._meshAimed.parent instanceof SmallIcon) {
+            if (Control._meshAimed instanceof SmallIcon) {
+                Control._meshAimed.onActivate();
+                return;
+            }
+            else if (Control._meshAimed.parent instanceof Icon) {
                 Control._meshAimed.parent.onActivate();
                 return;
             }
@@ -400,8 +403,11 @@ class Control {
         let pick = Main.Scene.pickWithRay(ray, (mesh) => { return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible; });
         if (pick.hit) {
             Control._meshAimed = pick.pickedMesh;
-            if (Control._meshAimed.parent instanceof Icon ||
-                Control._meshAimed.parent instanceof SmallIcon) {
+            console.log(Control._meshAimed);
+            if (Control._meshAimed instanceof SmallIcon) {
+                Control._meshAimed.Hightlight();
+            }
+            else if (Control._meshAimed.parent instanceof Icon) {
                 Control._meshAimed.parent.Hightlight();
             }
             else {
@@ -455,7 +461,6 @@ class Icon extends BABYLON.Mesh {
     constructor(picture, position, camera, scale = 1, onActivate = () => { return; }) {
         super(picture, camera.getScene());
         this.localPosition = BABYLON.Vector3.Zero();
-        this.smallIcons = [];
         this._cameraForward = BABYLON.Vector3.Zero();
         this._targetPosition = BABYLON.Vector3.Zero();
         this._worldishMatrix = BABYLON.Matrix.Identity();
@@ -524,25 +529,6 @@ class Icon extends BABYLON.Mesh {
         this.frame.parent = this;
         this.frame.material = Icon.iconFrameMaterial;
         console.log("Icon " + this.name + " initialized.");
-    }
-    AddSmallIcon(smallIcon) {
-        this.smallIcons.push(smallIcon);
-    }
-    ShowSmallIcons() {
-        for (let i = 0; i < this.smallIcons.length; i++) {
-            let smallIcon = this.smallIcons[i];
-            for (let j = 0; j < smallIcon.getChildMeshes().length; j++) {
-                smallIcon.getChildMeshes()[j].isVisible = true;
-            }
-        }
-    }
-    HideSmallIcons() {
-        for (let i = 0; i < this.smallIcons.length; i++) {
-            let smallIcon = this.smallIcons[i];
-            for (let j = 0; j < smallIcon.getChildMeshes().length; j++) {
-                smallIcon.getChildMeshes()[j].isVisible = false;
-            }
-        }
     }
     Hightlight() {
         if (this.frame) {
@@ -636,35 +622,77 @@ class Main {
         groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
         groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         ground.material = groundMaterial;
-        Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-0.7, -1.5, 0.4), Main.Camera, 0.5, () => {
+        let sIDistance = 1.6;
+        let sIAlphaZero = Math.PI / 12;
+        let sIAlpha = Math.PI / 20;
+        let smallIconSize = 1;
+        let smallIconOffset = 1.1;
+        let smallIconDistance = 0.6;
+        Main.moveIcon = new Icon("move-icon", new BABYLON.Vector3(-0.7, -1.5, 0.4), Main.Camera, 1, () => {
+            SmallIcon.HideClass("brick-pick");
+            SmallIcon.HideClass("brick-cat");
             Control.mode = 0;
         });
-        Main.buildIcon = new Icon("build-icon", new BABYLON.Vector3(0, -1.5, 0.6), Main.Camera, 0.5, () => {
-            Main.buildIcon.ShowSmallIcons();
+        Main.buildIcon = new Icon("build-icon", new BABYLON.Vector3(0, -1.5, 0.6), Main.Camera, 1, () => {
+            SmallIcon.HideClass("brick-pick");
+            SmallIcon.ShowClass("brick-cat");
             Control.mode = 4;
         });
-        Main.buildIcon.AddSmallIcon(new SmallIcon("flat-brick", new BABYLON.Vector3(0, 1.2, 0), Main.buildIcon, 1, () => {
-            Main.buildIcon.HideSmallIcons();
-            Control.width = 1;
-            Control.height = 1;
-            Control.length = 1;
-            Control.mode = 1;
-        }));
-        Main.buildIcon.AddSmallIcon(new SmallIcon("long-brick", new BABYLON.Vector3(0, 2.2, 0), Main.buildIcon, 1, () => {
-            Main.buildIcon.HideSmallIcons();
-            Control.width = 2;
-            Control.height = 3;
-            Control.length = 1;
-            Control.mode = 1;
-        }));
-        Main.buildIcon.AddSmallIcon(new SmallIcon("large-brick", new BABYLON.Vector3(0, 3.2, 0), Main.buildIcon, 1, () => {
-            Main.buildIcon.HideSmallIcons();
-            Control.width = 4;
-            Control.height = 3;
-            Control.length = 2;
-            Control.mode = 1;
-        }));
-        Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(0.7, -1.5, 0.4), Main.Camera, 0.5, () => {
+        new SmallIcon("bricks/brick-s-bar", new BABYLON.Vector3(0, Math.cos(Math.PI / 2 - (sIAlphaZero + 0 * sIAlpha)) * sIDistance, 2 * sIDistance * Math.sin((sIAlphaZero + 0 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 0 * sIAlpha)), Main.buildIcon, smallIconSize, ["brick-cat"], () => {
+            SmallIcon.HideClass("brick-cat");
+            SmallIcon.ShowClass("brick-s-bar");
+        });
+        [1, 2, 4, 6, 8].forEach((v, i) => {
+            new SmallIcon("bricks/brick-" + v + "-1-1", new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0), Main.buildIcon, smallIconSize, ["brick-pick", "brick-s-bar"], () => {
+                SmallIcon.HideClass("brick-s-bar");
+                Control.width = v;
+                Control.height = 1;
+                Control.length = 1;
+                Control.mode = 1;
+            });
+        });
+        new SmallIcon("bricks/brick-m-bar", new BABYLON.Vector3(0, Math.cos(Math.PI / 2 - (sIAlphaZero + 1 * sIAlpha)) * sIDistance, 2 * sIDistance * Math.sin((sIAlphaZero + 1 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 1 * sIAlpha)), Main.buildIcon, smallIconSize, ["brick-cat"], () => {
+            SmallIcon.HideClass("brick-cat");
+            SmallIcon.ShowClass("brick-m-bar");
+        });
+        [1, 2, 4, 6, 8].forEach((v, i) => {
+            new SmallIcon("bricks/brick-" + v + "-3-1", new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0), Main.buildIcon, smallIconSize, ["brick-pick", "brick-m-bar"], () => {
+                SmallIcon.HideClass("brick-m-bar");
+                Control.width = v;
+                Control.height = 3;
+                Control.length = 1;
+                Control.mode = 1;
+            });
+        });
+        new SmallIcon("bricks/brick-s-brick", new BABYLON.Vector3(0, Math.cos(Math.PI / 2 - (sIAlphaZero + 2 * sIAlpha)) * sIDistance, 2 * sIDistance * Math.sin((sIAlphaZero + 2 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 2 * sIAlpha)), Main.buildIcon, smallIconSize, ["brick-cat"], () => {
+            SmallIcon.HideClass("brick-cat");
+            SmallIcon.ShowClass("brick-s-brick");
+        });
+        [2, 4, 6, 8].forEach((v, i) => {
+            new SmallIcon("bricks/brick-" + v + "-1-2", new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0), Main.buildIcon, smallIconSize, ["brick-pick", "brick-s-brick"], () => {
+                SmallIcon.HideClass("brick-s-brick");
+                Control.width = v;
+                Control.height = 1;
+                Control.length = 2;
+                Control.mode = 1;
+            });
+        });
+        new SmallIcon("bricks/brick-m-brick", new BABYLON.Vector3(0, Math.cos(Math.PI / 2 - (sIAlphaZero + 3 * sIAlpha)) * sIDistance, 2 * sIDistance * Math.sin((sIAlphaZero + 3 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 3 * sIAlpha)), Main.buildIcon, smallIconSize, ["brick-cat"], () => {
+            SmallIcon.HideClass("brick-cat");
+            SmallIcon.ShowClass("brick-m-brick");
+        });
+        [2, 4, 6, 8].forEach((v, i) => {
+            new SmallIcon("bricks/brick-" + v + "-3-2", new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0), Main.buildIcon, smallIconSize, ["brick-pick", "brick-m-brick"], () => {
+                SmallIcon.HideClass("brick-m-brick");
+                Control.width = v;
+                Control.height = 3;
+                Control.length = 2;
+                Control.mode = 1;
+            });
+        });
+        Main.deleteIcon = new Icon("delete-icon", new BABYLON.Vector3(0.7, -1.5, 0.4), Main.Camera, 1, () => {
+            SmallIcon.HideClass("brick-pick");
+            SmallIcon.HideClass("brick-cat");
             Control.mode = 2;
         });
     }
@@ -675,18 +703,21 @@ class Main {
         arcRotateCamera.setPosition(new BABYLON.Vector3(4, 3, -5));
         arcRotateCamera.attachControl(Main.Canvas);
         arcRotateCamera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
-        let cameraFrameSize = 3;
+        let cameraFrameSize = 4;
         arcRotateCamera.orthoTop = cameraFrameSize / 2;
         arcRotateCamera.orthoBottom = -cameraFrameSize / 2;
         arcRotateCamera.orthoLeft = -cameraFrameSize;
         arcRotateCamera.orthoRight = cameraFrameSize;
         let light = new BABYLON.DirectionalLight("Light", new BABYLON.Vector3(-0.75, -1, 0.5), Main.Scene);
         light.intensity = 1.5;
-        let brick = new PrettyBrick(8, 3, 2, Main.Scene);
-        let brickMaterial = new BABYLON.StandardMaterial("DevShowBrickMaterial", Main.Scene);
-        brickMaterial.diffuseColor.copyFromFloats(1, 1, 1);
-        brickMaterial.specularColor.copyFromFloats(0, 0, 0);
-        brick.material = brickMaterial;
+        let brick6 = new PrettyBrick(6, 3, 1, Main.Scene);
+        brick6.position.z = Config.ZSize;
+        let brick4 = new PrettyBrick(4, 3, 1, Main.Scene);
+        brick4.position.z = -Config.ZSize;
+        brick4.position.x = -Config.XSize;
+        let brick2 = new PrettyBrick(2, 3, 1, Main.Scene);
+        brick2.position.z = -Config.ZSize;
+        brick2.position.x = 3 * Config.XSize;
     }
     animate() {
         Main.Engine.runRenderLoop(() => {
@@ -770,83 +801,57 @@ class PrettyBrick extends BABYLON.Mesh {
     }
 }
 class SmallIcon extends BABYLON.Mesh {
-    constructor(picture, position, parent, scale = 1, onActivate = () => { return; }) {
+    constructor(picture, position, parent, scale = 1, iconClass = [], onActivate = () => { return; }) {
         super(picture, parent.getScene());
-        this.position.copyFrom(position);
-        this.parent = parent;
-        this.rotation.copyFromFloats(0, 0, 0);
+        this.localPosition = BABYLON.Vector3.Zero();
+        this.iconClass = [];
+        this._targetPosition = BABYLON.Vector3.Zero();
+        this.localPosition.copyFrom(position);
+        this.localPosition.scaleInPlace(scale);
+        this.parentIcon = parent;
         this.scaling.copyFromFloats(scale, scale, scale);
         this.onActivate = onActivate;
-        if (SmallIcon.smallIconMeshData && SmallIcon.smallIconFrameMeshData) {
-            this.Initialize();
-        }
-        else {
-            SmallIcon.LoadSmallIconFrameData(parent.getScene());
-            SmallIcon.onSmallIconFrameDataLoaded.push(() => {
-                this.Initialize();
-            });
-        }
+        this.iconClass = iconClass;
+        this.Initialize();
         SmallIcon.instances.push(this);
-    }
-    static LoadSmallIconFrameData(scene) {
-        if (SmallIcon.smallIconFrameDataLoading) {
-            return;
-        }
-        SmallIcon.smallIconFrameDataLoading = true;
-        BABYLON.SceneLoader.ImportMesh("", "./datas/small-icon-base.babylon", "", scene, (meshes) => {
-            console.log("smallIconMeshData loaded");
-            for (let i = 0; i < meshes.length; i++) {
-                if (meshes[i] instanceof BABYLON.Mesh) {
-                    let mesh = meshes[i];
-                    if (mesh.name.indexOf("Icon") !== -1) {
-                        SmallIcon.smallIconMeshData = BABYLON.VertexData.ExtractFromMesh(mesh);
-                    }
-                    else if (mesh.name.indexOf("Frame") !== -1) {
-                        SmallIcon.smallIconFrameMeshData = BABYLON.VertexData.ExtractFromMesh(mesh);
-                    }
-                    mesh.dispose();
-                }
-            }
-            SmallIcon.smallIconFrameMaterial = new BABYLON.StandardMaterial("IconFrameMaterial", scene);
-            SmallIcon.smallIconFrameMaterial.diffuseTexture = new BABYLON.Texture("./datas/textures/frame-small-icon.png", scene);
-            SmallIcon.smallIconFrameMaterial.diffuseColor.copyFromFloats(0.9, 0.9, 0.9);
-            SmallIcon.smallIconFrameMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-            for (let i = 0; i < SmallIcon.onSmallIconFrameDataLoaded.length; i++) {
-                SmallIcon.onSmallIconFrameDataLoaded[i]();
-            }
+        parent.getScene().registerBeforeRender(() => {
+            this.UpdatePosition();
         });
+    }
+    static get SmallIconMeshData() {
+        if (!SmallIcon.smallIconMeshData) {
+            let quad = BABYLON.MeshBuilder.CreatePlane("Quad", { width: 0.5, height: 0.25 }, Main.Scene);
+            SmallIcon.smallIconMeshData = BABYLON.VertexData.ExtractFromMesh(quad);
+            quad.dispose();
+        }
+        return SmallIcon.smallIconMeshData;
     }
     Initialize() {
         console.log("Icon " + this.name + " initializing...");
-        let icon = new BABYLON.Mesh(this.name + "-icon", this.getScene());
-        SmallIcon.smallIconMeshData.applyToMesh(icon);
-        icon.position.copyFromFloats(0, 0, 0);
-        icon.parent = this;
+        SmallIcon.SmallIconMeshData.applyToMesh(this);
         let iconMaterial = new BABYLON.StandardMaterial(this.name + "-mat", this.getScene());
         iconMaterial.diffuseTexture = new BABYLON.Texture("./datas/textures/" + this.name + ".png", this.getScene());
         iconMaterial.diffuseTexture.hasAlpha = true;
         iconMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-        icon.material = iconMaterial;
-        this.frame = new BABYLON.Mesh(this.name + "-frame", this.getScene());
-        SmallIcon.smallIconFrameMeshData.applyToMesh(this.frame);
-        this.frame.position.copyFromFloats(0, 0, 0);
-        this.frame.parent = this;
-        this.frame.material = SmallIcon.smallIconFrameMaterial;
-        for (let j = 0; j < this.getChildMeshes().length; j++) {
-            this.getChildMeshes()[j].isVisible = false;
-        }
+        this.material = iconMaterial;
+        this.enableEdgesRendering();
+        this.Unlit();
+        this.isVisible = false;
         console.log("SmallIcon " + this.name + " initialized.");
     }
     Hightlight() {
-        if (this.frame) {
-            this.frame.renderOutline = true;
-            this.frame.outlineColor = BABYLON.Color3.White();
-            this.frame.outlineWidth = 0.02;
+        this.lookAt(Main.Camera.position, 0, Math.PI, 0, BABYLON.Space.LOCAL);
+        this.edgesColor.copyFromFloats(0, 0, 0, 1);
+        this.edgesWidth = 1;
+        if (this.material instanceof BABYLON.StandardMaterial) {
+            this.material.useAlphaFromDiffuseTexture = false;
         }
     }
     Unlit() {
-        if (this.frame) {
-            this.frame.renderOutline = false;
+        this.edgesColor.copyFromFloats(0, 0, 0, 0.75);
+        this.edgesWidth = 1;
+        if (this.material instanceof BABYLON.StandardMaterial) {
+            this.material.useAlphaFromDiffuseTexture = true;
         }
     }
     static UnlitAll() {
@@ -854,10 +859,36 @@ class SmallIcon extends BABYLON.Mesh {
             i.Unlit();
         });
     }
+    static ShowClass(iconClass) {
+        for (let i = 0; i < SmallIcon.instances.length; i++) {
+            let smallIcon = SmallIcon.instances[i];
+            for (let j = 0; j < smallIcon.iconClass.length; j++) {
+                if (smallIcon.iconClass[j].indexOf(iconClass) !== -1) {
+                    smallIcon.isVisible = true;
+                }
+            }
+        }
+    }
+    static HideClass(iconClass) {
+        for (let i = 0; i < SmallIcon.instances.length; i++) {
+            let smallIcon = SmallIcon.instances[i];
+            for (let j = 0; j < smallIcon.iconClass.length; j++) {
+                if (smallIcon.iconClass[j].indexOf(iconClass) !== -1) {
+                    smallIcon.isVisible = false;
+                }
+            }
+        }
+    }
+    UpdatePosition() {
+        BABYLON.Vector3.TransformCoordinatesToRef(this.localPosition, this.parentIcon.getWorldMatrix(), this._targetPosition);
+        if (isNaN(this._targetPosition.x)) {
+            return;
+        }
+        BABYLON.Vector3.LerpToRef(this.position, this._targetPosition, 0.05, this.position);
+        this.lookAt(Main.Camera.position, 0, 0, 0);
+    }
 }
 SmallIcon.instances = [];
-SmallIcon.onSmallIconFrameDataLoaded = [];
-SmallIcon.smallIconFrameDataLoading = false;
 class Utils {
     static RequestFullscreen() {
         if (Main.Canvas.requestFullscreen) {

@@ -63,12 +63,20 @@ class Main {
     groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
     ground.material = groundMaterial;
 
+    let sIDistance: number = 1.6;
+    let sIAlphaZero: number = Math.PI / 12;
+    let sIAlpha: number = Math.PI / 20;
+    let smallIconSize: number = 1;
+    let smallIconOffset: number = 1.1;
+    let smallIconDistance: number = 0.6;
     Main.moveIcon = new Icon(
       "move-icon",
       new BABYLON.Vector3(-0.7, -1.5, 0.4),
       Main.Camera,
-      0.5,
+      1,
       () => {
+        SmallIcon.HideClass("brick-pick");
+        SmallIcon.HideClass("brick-cat");
         Control.mode = 0;
       }
     );
@@ -76,57 +84,153 @@ class Main {
       "build-icon",
       new BABYLON.Vector3(0, -1.5, 0.6),
       Main.Camera,
-      0.5,
+      1,
       () => {
-        Main.buildIcon.ShowSmallIcons();
+        SmallIcon.HideClass("brick-pick");
+        SmallIcon.ShowClass("brick-cat");
         Control.mode = 4;
       }
     );
-    Main.buildIcon.AddSmallIcon(new SmallIcon(
-      "flat-brick",
-      new BABYLON.Vector3(0, 1.2, 0),
+    new SmallIcon(
+      "bricks/brick-s-bar",
+      new BABYLON.Vector3(
+        0,
+        Math.cos(Math.PI / 2 - (sIAlphaZero + 0 * sIAlpha)) * sIDistance,
+        2 * sIDistance * Math.sin((sIAlphaZero + 0 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 0 * sIAlpha)
+      ),
       Main.buildIcon,
-      1,
+      smallIconSize,
+      ["brick-cat"],
       () => {
-        Main.buildIcon.HideSmallIcons();
-        Control.width = 1;
-        Control.height = 1;
-        Control.length = 1;
-        Control.mode = 1;
+        SmallIcon.HideClass("brick-cat");
+        SmallIcon.ShowClass("brick-s-bar");
       }
-    ));
-    Main.buildIcon.AddSmallIcon(new SmallIcon(
-      "long-brick",
-      new BABYLON.Vector3(0, 2.2, 0),
+    );
+    [1, 2, 4, 6, 8].forEach(
+      (v: number, i: number) => {
+        new SmallIcon(
+          "bricks/brick-" + v + "-1-1",
+          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
+          Main.buildIcon,
+          smallIconSize,
+          ["brick-pick", "brick-s-bar"],
+          () => {
+            SmallIcon.HideClass("brick-s-bar");
+            Control.width = v;
+            Control.height = 1;
+            Control.length = 1;
+            Control.mode = 1;
+          }
+        );
+      }
+    );
+    new SmallIcon(
+      "bricks/brick-m-bar",
+      new BABYLON.Vector3(
+        0,
+        Math.cos(Math.PI / 2 - (sIAlphaZero + 1 * sIAlpha)) * sIDistance,
+        2 * sIDistance * Math.sin((sIAlphaZero + 1 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 1 * sIAlpha)
+      ),
       Main.buildIcon,
-      1,
+      smallIconSize,
+      ["brick-cat"],
       () => {
-        Main.buildIcon.HideSmallIcons();
-        Control.width = 2;
-        Control.height = 3;
-        Control.length = 1;
-        Control.mode = 1;
+        SmallIcon.HideClass("brick-cat");
+        SmallIcon.ShowClass("brick-m-bar");
       }
-    ));
-    Main.buildIcon.AddSmallIcon(new SmallIcon(
-      "large-brick",
-      new BABYLON.Vector3(0, 3.2, 0),
+    );
+    [1, 2, 4, 6, 8].forEach(
+      (v: number, i: number) => {
+      new SmallIcon(
+          "bricks/brick-" + v + "-3-1",
+          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
+          Main.buildIcon,
+          smallIconSize,
+          ["brick-pick", "brick-m-bar"],
+          () => {
+            SmallIcon.HideClass("brick-m-bar");
+            Control.width = v;
+            Control.height = 3;
+            Control.length = 1;
+            Control.mode = 1;
+          }
+        );
+      }
+    );
+    new SmallIcon(
+      "bricks/brick-s-brick",
+      new BABYLON.Vector3(
+        0,
+        Math.cos(Math.PI / 2 - (sIAlphaZero + 2 * sIAlpha)) * sIDistance,
+        2 * sIDistance * Math.sin((sIAlphaZero + 2 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 2 * sIAlpha)
+      ),
       Main.buildIcon,
-      1,
+      smallIconSize,
+      ["brick-cat"],
       () => {
-        Main.buildIcon.HideSmallIcons();
-        Control.width = 4;
-        Control.height = 3;
-        Control.length = 2;
-        Control.mode = 1;
+        SmallIcon.HideClass("brick-cat");
+        SmallIcon.ShowClass("brick-s-brick");
       }
-    ));
+    );
+    [2, 4, 6, 8].forEach(
+      (v: number, i: number) => {
+        new SmallIcon(
+          "bricks/brick-" + v + "-1-2",
+          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
+          Main.buildIcon,
+          smallIconSize,
+          ["brick-pick", "brick-s-brick"],
+          () => {
+            SmallIcon.HideClass("brick-s-brick");
+            Control.width = v;
+            Control.height = 1;
+            Control.length = 2;
+            Control.mode = 1;
+          }
+        );
+      }
+    );
+    new SmallIcon(
+      "bricks/brick-m-brick",
+      new BABYLON.Vector3(
+        0,
+        Math.cos(Math.PI / 2 - (sIAlphaZero + 3 * sIAlpha)) * sIDistance,
+        2 * sIDistance * Math.sin((sIAlphaZero + 3 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 3 * sIAlpha)
+      ),
+      Main.buildIcon,
+      smallIconSize,
+      ["brick-cat"],
+      () => {
+        SmallIcon.HideClass("brick-cat");
+        SmallIcon.ShowClass("brick-m-brick");
+      }
+    );
+    [2, 4, 6, 8].forEach(
+      (v: number, i: number) => {
+        new SmallIcon(
+          "bricks/brick-" + v + "-3-2",
+          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
+          Main.buildIcon,
+          smallIconSize,
+          ["brick-pick", "brick-m-brick"],
+          () => {
+            SmallIcon.HideClass("brick-m-brick");
+            Control.width = v;
+            Control.height = 3;
+            Control.length = 2;
+            Control.mode = 1;
+          }
+        );
+      }
+    );
     Main.deleteIcon = new Icon(
       "delete-icon",
       new BABYLON.Vector3(0.7, -1.5, 0.4),
       Main.Camera,
-      0.5,
+      1,
       () => {
+        SmallIcon.HideClass("brick-pick");
+        SmallIcon.HideClass("brick-cat");
         Control.mode = 2;
       }
     );
@@ -144,18 +248,21 @@ class Main {
     arcRotateCamera.setPosition(new BABYLON.Vector3(4, 3, -5));
     arcRotateCamera.attachControl(Main.Canvas);
     arcRotateCamera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
-    let cameraFrameSize: number = 3;
+    let cameraFrameSize: number = 4;
     arcRotateCamera.orthoTop = cameraFrameSize / 2;
     arcRotateCamera.orthoBottom = - cameraFrameSize / 2;
     arcRotateCamera.orthoLeft = - cameraFrameSize;
     arcRotateCamera.orthoRight = cameraFrameSize;
     let light: BABYLON.Light = new BABYLON.DirectionalLight("Light", new BABYLON.Vector3(-0.75, -1, 0.5), Main.Scene);
     light.intensity = 1.5;
-    let brick: PrettyBrick = new PrettyBrick(8, 3, 2, Main.Scene);
-    let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("DevShowBrickMaterial", Main.Scene);
-    brickMaterial.diffuseColor.copyFromFloats(1, 1, 1);
-    brickMaterial.specularColor.copyFromFloats(0, 0, 0);
-    brick.material = brickMaterial;
+    let brick6: PrettyBrick = new PrettyBrick(6, 3, 1, Main.Scene);
+    brick6.position.z =Config.ZSize;
+    let brick4: PrettyBrick = new PrettyBrick(4, 3, 1, Main.Scene);
+    brick4.position.z = -Config.ZSize;
+    brick4.position.x = -Config.XSize;
+    let brick2: PrettyBrick = new PrettyBrick(2, 3, 1, Main.Scene);
+    brick2.position.z = -Config.ZSize;
+    brick2.position.x = 3 * Config.XSize;
   }
 
   public animate(): void {

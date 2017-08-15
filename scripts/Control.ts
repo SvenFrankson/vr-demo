@@ -56,8 +56,12 @@ class Control {
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
       if (
-        Control._meshAimed.parent instanceof Icon ||
-        Control._meshAimed.parent instanceof SmallIcon
+        Control._meshAimed instanceof SmallIcon
+      ) {
+        Control._meshAimed.onActivate();
+        return;
+      } else if (
+        Control._meshAimed.parent instanceof Icon
       ) {
         Control._meshAimed.parent.onActivate();
         return;
@@ -112,9 +116,13 @@ class Control {
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
+      console.log(Control._meshAimed);
       if (
-        Control._meshAimed.parent instanceof Icon ||
-        Control._meshAimed.parent instanceof SmallIcon
+        Control._meshAimed instanceof SmallIcon
+      ) {
+        Control._meshAimed.Hightlight();
+      } else if (
+        Control._meshAimed.parent instanceof Icon
       ) {
         Control._meshAimed.parent.Hightlight();
       } else {

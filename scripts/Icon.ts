@@ -46,7 +46,6 @@ class Icon extends BABYLON.Mesh {
   private localPosition: BABYLON.Vector3 = BABYLON.Vector3.Zero();
   private camera: BABYLON.FreeCamera;
   private frame: BABYLON.Mesh;
-  public smallIcons: SmallIcon[] = [];
   public onActivate: () => void;
 
   constructor(
@@ -100,28 +99,6 @@ class Icon extends BABYLON.Mesh {
     this.frame.material = Icon.iconFrameMaterial;
 
     console.log("Icon " + this.name + " initialized.");
-  }
-
-  public AddSmallIcon(smallIcon: SmallIcon): void {
-    this.smallIcons.push(smallIcon);
-  }
-
-  public ShowSmallIcons(): void {
-    for (let i: number = 0; i < this.smallIcons.length; i++) {
-      let smallIcon: SmallIcon = this.smallIcons[i];
-      for (let j: number = 0; j < smallIcon.getChildMeshes().length; j++) {
-        smallIcon.getChildMeshes()[j].isVisible = true;
-      }
-    }
-  }
-
-  public HideSmallIcons(): void {
-    for (let i: number = 0; i < this.smallIcons.length; i++) {
-      let smallIcon: SmallIcon = this.smallIcons[i];
-      for (let j: number = 0; j < smallIcon.getChildMeshes().length; j++) {
-        smallIcon.getChildMeshes()[j].isVisible = false;
-      }
-    }
   }
 
   public Hightlight(): void {
