@@ -116,7 +116,6 @@ class Control {
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
-      console.log(Control._meshAimed);
       if (
         Control._meshAimed instanceof SmallIcon
       ) {

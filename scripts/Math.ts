@@ -25,4 +25,15 @@ class VRMath {
     }
     return angle;
   }
+
+  public static XAngleYAngle(x: number, y: number): BABYLON.Vector3 {
+    let vector: BABYLON.Vector3 = new BABYLON.Vector3(0, 0, 1);
+    let xMatrix: BABYLON.Matrix = BABYLON.Matrix.RotationX(-x);
+    let yMatrix: BABYLON.Matrix = BABYLON.Matrix.RotationY(y);
+    let globalMatrix: BABYLON.Matrix = BABYLON.Matrix.RotationX(5 * Math.PI / 16);
+    BABYLON.Vector3.TransformNormalToRef(vector, globalMatrix, vector);
+    BABYLON.Vector3.TransformNormalToRef(vector, xMatrix, vector);
+    BABYLON.Vector3.TransformNormalToRef(vector, yMatrix, vector);
+    return vector;
+  }
 }

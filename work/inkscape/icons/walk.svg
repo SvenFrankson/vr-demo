@@ -46,7 +46,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -55,15 +55,25 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,-161.53332)">
+    <rect
+       style="fill:#ffffff;fill-opacity:0.49803922;stroke:none;stroke-width:0.53015;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect4494"
+       width="135.46666"
+       height="135.46666"
+       x="0"
+       y="161.53333"
+       ry="0" />
     <path
-       style="fill:#8bdf70;fill-opacity:1;stroke:#000000;stroke-width:1.73204994;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 67.733333,167.75782 -8.646718,8.6467 h 17.293438 z m -14.090497,14.09049 -9.155508,9.15551 h 46.492011 l -9.155508,-9.15551 z m -14.598611,14.59861 -9.155509,9.15551 h 75.689234 l -9.155508,-9.15551 z"
+       style="fill:#8bdf70;fill-opacity:1;stroke:#000000;stroke-width:1.2345252;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 67.733334,173.79535 -6.162982,6.16299 h 12.325964 z m -10.043055,10.04306 -6.525624,6.52562 h 33.137357 l -6.525624,-6.52562 z m -10.405216,10.40521 -6.525625,6.52562 h 53.94779 l -6.525624,-6.52562 z"
        id="rect4492"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cccccccccccccc" />
+       sodipodi:nodetypes="cccccccccccccc"
+       inkscape:transform-center-x="0.1889881"
+       inkscape:transform-center-y="-15.497037" />
     <path
-       style="fill:#8bdf70;fill-opacity:1;stroke:#000000;stroke-width:1.73204994;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 67.733332,290.83733 8.646721,-8.64672 h -17.29344 z m 14.090498,-14.0905 9.15551,-9.1555 H 44.487326 l 9.15551,9.1555 z m 14.598612,-14.59861 9.155508,-9.1555 H 29.888715 l 9.155508,9.1555 z"
+       style="fill:#8bdf70;fill-opacity:1;stroke:#000000;stroke-width:1.2345252;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 67.733332,284.73796 6.162984,-6.163 H 61.570351 Z m 10.043056,-10.04307 6.525626,-6.52561 h -33.13736 l 6.525625,6.52561 z m 10.405216,-10.40521 6.525624,-6.52561 h -53.94779 l 6.525624,6.52561 z"
        id="rect4492-3"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cccccccccccccc" />

@@ -8,9 +8,9 @@ class Main {
   public static Camera: BABYLON.WebVRFreeCamera;
   public static Light: BABYLON.Light;
 
-  public static moveIcon: Icon;
-  public static buildIcon: Icon;
-  public static deleteIcon: Icon;
+  public static moveIcon: SmallIcon;
+  public static buildIcon: SmallIcon;
+  public static deleteIcon: SmallIcon;
 
   public static cursor: BABYLON.Mesh;
 
@@ -54,7 +54,6 @@ class Main {
     Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
     Main.Light.specular = new BABYLON.Color3(1, 1, 1);
 
-    // debug purpose only under this line
     let ground: BABYLON.Mesh = new BABYLON.Mesh("Ground", Main.Scene);
     BrickData.CubicalData(Config.XMax, 1, Config.ZMax).applyToMesh(ground);
     ground.position.y = -Config.YSize;
@@ -63,177 +62,7 @@ class Main {
     groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
     ground.material = groundMaterial;
 
-    let sIDistance: number = 1.6;
-    let sIAlphaZero: number = Math.PI / 12;
-    let sIAlpha: number = Math.PI / 20;
-    let smallIconSize: number = 1;
-    let smallIconOffset: number = 1.1;
-    let smallIconDistance: number = 0.6;
-    Main.moveIcon = new Icon(
-      "move-icon",
-      new BABYLON.Vector3(-0.7, -1.5, 0.4),
-      Main.Camera,
-      1,
-      () => {
-        SmallIcon.HideClass("brick-pick");
-        SmallIcon.HideClass("brick-cat");
-        Control.mode = 0;
-      }
-    );
-    Main.buildIcon = new Icon(
-      "build-icon",
-      new BABYLON.Vector3(0, -1.5, 0.6),
-      Main.Camera,
-      1,
-      () => {
-        SmallIcon.HideClass("brick-pick");
-        SmallIcon.ShowClass("brick-cat");
-        Control.mode = 4;
-      }
-    );
-    new SmallIcon(
-      "bricks/brick-s-bar",
-      new BABYLON.Vector3(
-        0,
-        Math.cos(Math.PI / 2 - (sIAlphaZero + 0 * sIAlpha)) * sIDistance,
-        2 * sIDistance * Math.sin((sIAlphaZero + 0 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 0 * sIAlpha)
-      ),
-      Main.buildIcon,
-      smallIconSize,
-      ["brick-cat"],
-      () => {
-        SmallIcon.HideClass("brick-cat");
-        SmallIcon.ShowClass("brick-s-bar");
-      }
-    );
-    [1, 2, 4, 6, 8].forEach(
-      (v: number, i: number) => {
-        new SmallIcon(
-          "bricks/brick-" + v + "-1-1",
-          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
-          Main.buildIcon,
-          smallIconSize,
-          ["brick-pick", "brick-s-bar"],
-          () => {
-            SmallIcon.HideClass("brick-s-bar");
-            Control.width = v;
-            Control.height = 1;
-            Control.length = 1;
-            Control.mode = 1;
-          }
-        );
-      }
-    );
-    new SmallIcon(
-      "bricks/brick-m-bar",
-      new BABYLON.Vector3(
-        0,
-        Math.cos(Math.PI / 2 - (sIAlphaZero + 1 * sIAlpha)) * sIDistance,
-        2 * sIDistance * Math.sin((sIAlphaZero + 1 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 1 * sIAlpha)
-      ),
-      Main.buildIcon,
-      smallIconSize,
-      ["brick-cat"],
-      () => {
-        SmallIcon.HideClass("brick-cat");
-        SmallIcon.ShowClass("brick-m-bar");
-      }
-    );
-    [1, 2, 4, 6, 8].forEach(
-      (v: number, i: number) => {
-      new SmallIcon(
-          "bricks/brick-" + v + "-3-1",
-          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
-          Main.buildIcon,
-          smallIconSize,
-          ["brick-pick", "brick-m-bar"],
-          () => {
-            SmallIcon.HideClass("brick-m-bar");
-            Control.width = v;
-            Control.height = 3;
-            Control.length = 1;
-            Control.mode = 1;
-          }
-        );
-      }
-    );
-    new SmallIcon(
-      "bricks/brick-s-brick",
-      new BABYLON.Vector3(
-        0,
-        Math.cos(Math.PI / 2 - (sIAlphaZero + 2 * sIAlpha)) * sIDistance,
-        2 * sIDistance * Math.sin((sIAlphaZero + 2 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 2 * sIAlpha)
-      ),
-      Main.buildIcon,
-      smallIconSize,
-      ["brick-cat"],
-      () => {
-        SmallIcon.HideClass("brick-cat");
-        SmallIcon.ShowClass("brick-s-brick");
-      }
-    );
-    [2, 4, 6, 8].forEach(
-      (v: number, i: number) => {
-        new SmallIcon(
-          "bricks/brick-" + v + "-1-2",
-          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
-          Main.buildIcon,
-          smallIconSize,
-          ["brick-pick", "brick-s-brick"],
-          () => {
-            SmallIcon.HideClass("brick-s-brick");
-            Control.width = v;
-            Control.height = 1;
-            Control.length = 2;
-            Control.mode = 1;
-          }
-        );
-      }
-    );
-    new SmallIcon(
-      "bricks/brick-m-brick",
-      new BABYLON.Vector3(
-        0,
-        Math.cos(Math.PI / 2 - (sIAlphaZero + 3 * sIAlpha)) * sIDistance,
-        2 * sIDistance * Math.sin((sIAlphaZero + 3 * sIAlpha) / 2) * Math.sin(sIAlphaZero + 3 * sIAlpha)
-      ),
-      Main.buildIcon,
-      smallIconSize,
-      ["brick-cat"],
-      () => {
-        SmallIcon.HideClass("brick-cat");
-        SmallIcon.ShowClass("brick-m-brick");
-      }
-    );
-    [2, 4, 6, 8].forEach(
-      (v: number, i: number) => {
-        new SmallIcon(
-          "bricks/brick-" + v + "-3-2",
-          new BABYLON.Vector3(0, smallIconOffset + i * smallIconDistance, 0),
-          Main.buildIcon,
-          smallIconSize,
-          ["brick-pick", "brick-m-brick"],
-          () => {
-            SmallIcon.HideClass("brick-m-brick");
-            Control.width = v;
-            Control.height = 3;
-            Control.length = 2;
-            Control.mode = 1;
-          }
-        );
-      }
-    );
-    Main.deleteIcon = new Icon(
-      "delete-icon",
-      new BABYLON.Vector3(0.7, -1.5, 0.4),
-      Main.Camera,
-      1,
-      () => {
-        SmallIcon.HideClass("brick-pick");
-        SmallIcon.HideClass("brick-cat");
-        Control.mode = 2;
-      }
-    );
+    GUI.CreateGUI();
   }
 
   public CreateDevShowBrickScene(): void {
