@@ -215,6 +215,8 @@ class GUI {
           () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("paint-pick");
+            Control.color = c.color;
+            Control.mode = 4;
           }
         ).Hide();
       }
@@ -239,6 +241,8 @@ class GUI {
           () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("paint-pick");
+            Control.color = c.color;
+            Control.mode = 4;
           }
         ).Hide();
       }

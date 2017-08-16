@@ -39,6 +39,16 @@ class Control {
     this._length = v;
     BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
   }
+  private static _color: string = "efefef";
+  public static get color(): string {
+    return this._color;
+  }
+  public static set color(v: string) {
+    this._color = v;
+    if (Control.previewBrick.material instanceof BABYLON.StandardMaterial) {
+      Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString("#" + this.color);
+    }
+  }
 
   public static onPointerDown(): void {
     let t: number = (new Date()).getTime();
@@ -78,7 +88,7 @@ class Control {
         let newBrick: Brick = Brick.TryAdd(coordinates, this.width, this.height, this.length);
         if (newBrick) {
           let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
-          brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+          brickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
           brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
           newBrick.material = brickMaterial;
         }
@@ -88,6 +98,15 @@ class Control {
       if (pick.hit) {
         if (pick.pickedMesh instanceof Brick) {
           pick.pickedMesh.dispose();
+        }
+      }
+    }
+    if (Control.mode === 4) {
+      if (pick.hit) {
+        if (pick.pickedMesh instanceof Brick) {
+          if (pick.pickedMesh.material instanceof BABYLON.StandardMaterial) {
+            pick.pickedMesh.material.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
+          }
         }
       }
     }
@@ -132,6 +151,9 @@ class Control {
           if (Control.mode === 2) {
             Control._meshAimed.Hightlight(BABYLON.Color3.Red());
           }
+          if (Control.mode === 4) {
+            Control._meshAimed.Hightlight(BABYLON.Color3.FromHexString("#" + Control.color));
+          }
         }
         if (Control.mode === 1) {
           let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
@@ -160,7 +182,7 @@ class Control {
     Control.previewBrick.isPickable = false;
     BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
     let previewBrickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
-    previewBrickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+    previewBrickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
     previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
     previewBrickMaterial.alpha = 0.5;
     Control.previewBrick.material = previewBrickMaterial;

@@ -341,6 +341,15 @@ class Control {
         this._length = v;
         BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
     }
+    static get color() {
+        return this._color;
+    }
+    static set color(v) {
+        this._color = v;
+        if (Control.previewBrick.material instanceof BABYLON.StandardMaterial) {
+            Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString("#" + this.color);
+        }
+    }
     static onPointerDown() {
         let t = (new Date()).getTime();
         if ((t - Control._lastPointerDownTime) < Control.DOUBLEPOINTERDELAY) {
@@ -372,7 +381,7 @@ class Control {
                 let newBrick = Brick.TryAdd(coordinates, this.width, this.height, this.length);
                 if (newBrick) {
                     let brickMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
-                    brickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+                    brickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
                     brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
                     newBrick.material = brickMaterial;
                 }
@@ -382,6 +391,15 @@ class Control {
             if (pick.hit) {
                 if (pick.pickedMesh instanceof Brick) {
                     pick.pickedMesh.dispose();
+                }
+            }
+        }
+        if (Control.mode === 4) {
+            if (pick.hit) {
+                if (pick.pickedMesh instanceof Brick) {
+                    if (pick.pickedMesh.material instanceof BABYLON.StandardMaterial) {
+                        pick.pickedMesh.material.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
+                    }
                 }
             }
         }
@@ -417,6 +435,9 @@ class Control {
                     if (Control.mode === 2) {
                         Control._meshAimed.Hightlight(BABYLON.Color3.Red());
                     }
+                    if (Control.mode === 4) {
+                        Control._meshAimed.Hightlight(BABYLON.Color3.FromHexString("#" + Control.color));
+                    }
                 }
                 if (Control.mode === 1) {
                     let correctedPickPoint = BABYLON.Vector3.Zero();
@@ -443,7 +464,7 @@ class Control {
         Control.previewBrick.isPickable = false;
         BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
         let previewBrickMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
-        previewBrickMaterial.diffuseColor.copyFromFloats(0.8, 0.2, 0.2);
+        previewBrickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
         previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         previewBrickMaterial.alpha = 0.5;
         Control.previewBrick.material = previewBrickMaterial;
@@ -456,6 +477,7 @@ Control._mode = 0;
 Control._width = 1;
 Control._height = 1;
 Control._length = 1;
+Control._color = "efefef";
 class GUI {
     static CreateGUI() {
         let buildIconsBeta = -GUI.iconBeta / 2;
@@ -549,6 +571,8 @@ class GUI {
             new SmallIcon("paint/" + c.name + "", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, paintIconBetaLeft), Main.Camera, GUI.paintIconWidth, GUI.iconHeight, ["paint-pick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("paint-pick");
+                Control.color = c.color;
+                Control.mode = 4;
             }).Hide();
         });
         [
@@ -560,6 +584,8 @@ class GUI {
             new SmallIcon("paint/" + c.name + "", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, paintIconBetaRight), Main.Camera, GUI.paintIconWidth, GUI.iconHeight, ["paint-pick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("paint-pick");
+                Control.color = c.color;
+                Control.mode = 4;
             }).Hide();
         });
     }
