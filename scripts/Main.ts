@@ -21,6 +21,8 @@ class Main {
   }
 
   CreateScene(): void {
+    $("canvas").show();
+    $("#main-menu").hide();
     Main.Scene = new BABYLON.Scene(Main.Engine);
     Main.Scene.registerBeforeRender(Control.Update);
 
@@ -35,16 +37,14 @@ class Main {
       console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
     }
     Main.Camera.minZ = 0.2;
+    Main.Engine.switchFullscreen(true);
+    Main.Engine.resize();
+    Main.Camera.attachControl(Main.Canvas, true);
+    Main.Canvas.onpointerdown = () => {
+      Control.onPointerDown();
+    };
     Main.Canvas.onpointerup = () => {
-      Main.Canvas.onpointerup = undefined;
-       Main.Engine.switchFullscreen(true);
-      Main.Camera.attachControl(Main.Canvas, true);
-      Main.Canvas.onpointerdown = () => {
-        Control.onPointerDown();
-      };
-      Main.Canvas.onpointerup = () => {
-        Control.onPointerUp();
-      };
+      Control.onPointerUp();
     };
 
     Main.CreateCursor();
@@ -120,7 +120,19 @@ class Main {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  let game : Main = new Main("render-canvas");
-  game.CreateScene();
-  game.animate();
+  $("#cardboard-main-icon").on("click", () => {
+    let game : Main = new Main("render-canvas");
+    game.CreateScene();
+    game.animate();
+  });
 });
+
+$(document).on(
+  "webkitfullscreenchange mozfullscreenchange fullscreenchange",
+  (e) => {
+    if (!!Main.Engine.isFullscreen) {
+      $("canvas").hide();
+      $("#main-menu").show();
+    }
+  }
+);
