@@ -8,68 +8,62 @@ class GUI {
   public static iconBeta: number = 0.8;
 
   public static CreateGUI(): void {
-    let buildIconsBeta: number = - GUI.iconBeta / 2;
     Main.moveIcon = new SmallIcon(
       "move-icon",
-      VRMath.XAngleYAngle(0, - 3 * GUI.iconBeta / 2),
+      "L0",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.mainIconHeight,
       [""],
       () => {
         SmallIcon.UnLockCameraRotation();
         SmallIcon.HideClass("brick-pick");
+        SmallIcon.HideClass("paint-pick");
         SmallIcon.HideClass("brick-cat");
         Control.mode = 0;
       }
     );
     Main.buildIcon = new SmallIcon(
       "build-icon",
-      VRMath.XAngleYAngle(0, buildIconsBeta),
+      "L1",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.mainIconHeight,
       [""],
       () => {
         SmallIcon.LockCameraRotation();
         SmallIcon.HideClass("brick-pick");
+        SmallIcon.HideClass("paint-pick");
         SmallIcon.ShowClass("brick-cat");
         Control.mode = 5;
       }
     );
     Main.deleteIcon = new SmallIcon(
       "paint-icon",
-      VRMath.XAngleYAngle(0, GUI.iconBeta / 2),
+      "L2",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.mainIconHeight,
       [""],
       () => {
         SmallIcon.LockCameraRotation();
+        SmallIcon.HideClass("brick-pick");
+        SmallIcon.HideClass("brick-cat");
         SmallIcon.ShowClass("paint-pick");
         Control.mode = 5;
       }
     );
     Main.deleteIcon = new SmallIcon(
       "delete-icon",
-      VRMath.XAngleYAngle(0, 3 * GUI.iconBeta / 2),
+      "L3",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.mainIconHeight,
       [""],
       () => {
         SmallIcon.UnLockCameraRotation();
         SmallIcon.HideClass("brick-pick");
         SmallIcon.HideClass("brick-cat");
+        SmallIcon.HideClass("paint-pick");
         Control.mode = 2;
       }
     );
     new SmallIcon(
       "bricks/brick-s-bar",
-      VRMath.XAngleYAngle(GUI.iconAlphaZero + 0 * GUI.iconAlpha, buildIconsBeta),
+      "M0",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.iconHeight,
       ["brick-cat"],
       () => {
         SmallIcon.HideClass("brick-cat");
@@ -80,10 +74,8 @@ class GUI {
       (v: number, i: number) => {
         new SmallIcon(
           "bricks/brick-" + v + "-1-1",
-          VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta),
+          "M" + i,
           Main.Camera,
-          GUI.iconWidth,
-          GUI.iconHeight,
           ["brick-pick", "brick-s-bar"],
           () => {
             SmallIcon.UnLockCameraRotation();
@@ -98,10 +90,8 @@ class GUI {
     );
     new SmallIcon(
       "bricks/brick-m-bar",
-      VRMath.XAngleYAngle(GUI.iconAlphaZero + 1 * GUI.iconAlpha, buildIconsBeta),
+      "M1",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.iconHeight,
       ["brick-cat"],
       () => {
         SmallIcon.HideClass("brick-cat");
@@ -112,10 +102,8 @@ class GUI {
       (v: number, i: number) => {
       new SmallIcon(
           "bricks/brick-" + v + "-3-1",
-          VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta),
+          "M" + i,
           Main.Camera,
-          GUI.iconWidth,
-          GUI.iconHeight,
           ["brick-pick", "brick-m-bar"],
           () => {
             SmallIcon.UnLockCameraRotation();
@@ -130,10 +118,8 @@ class GUI {
     );
     new SmallIcon(
       "bricks/brick-s-brick",
-      VRMath.XAngleYAngle(GUI.iconAlphaZero + 2 * GUI.iconAlpha, buildIconsBeta),
+      "M2",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.iconHeight,
       ["brick-cat"],
       () => {
         SmallIcon.HideClass("brick-cat");
@@ -144,10 +130,8 @@ class GUI {
       (v: number, i: number) => {
         new SmallIcon(
           "bricks/brick-" + v + "-1-2",
-          VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta),
+          "M" + i,
           Main.Camera,
-          GUI.iconWidth,
-          GUI.iconHeight,
           ["brick-pick", "brick-s-brick"],
           () => {
             SmallIcon.UnLockCameraRotation();
@@ -162,10 +146,8 @@ class GUI {
     );
     new SmallIcon(
       "bricks/brick-m-brick",
-      VRMath.XAngleYAngle(GUI.iconAlphaZero + 3 * GUI.iconAlpha, buildIconsBeta),
+      "M3",
       Main.Camera,
-      GUI.iconWidth,
-      GUI.iconHeight,
       ["brick-cat"],
       () => {
         SmallIcon.HideClass("brick-cat");
@@ -176,10 +158,8 @@ class GUI {
       (v: number, i: number) => {
         new SmallIcon(
           "bricks/brick-" + v + "-3-2",
-          VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta),
+          "M" + i,
           Main.Camera,
-          GUI.iconWidth,
-          GUI.iconHeight,
           ["brick-pick", "brick-m-brick"],
           () => {
             SmallIcon.UnLockCameraRotation();
@@ -193,8 +173,6 @@ class GUI {
       }
     );
 
-    let paintIconBetaLeft: number = GUI.iconBeta / 2 - GUI.iconBeta / 7;
-    let paintIconBetaRight: number = GUI.iconBeta / 2 + GUI.iconBeta / 7;
     [
       {name: "black", color: "232323"},
       {name: "red", color: "f45342"},
@@ -207,10 +185,8 @@ class GUI {
       ) => {
         new SmallIcon(
           "paint/" + c.name + "",
-          VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, paintIconBetaLeft),
+          "S" + i,
           Main.Camera,
-          GUI.paintIconWidth,
-          GUI.iconHeight,
           ["paint-pick"],
           () => {
             SmallIcon.UnLockCameraRotation();
@@ -233,10 +209,8 @@ class GUI {
       ) => {
         new SmallIcon(
           "paint/" + c.name + "",
-          VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, paintIconBetaRight),
+          "S" + (4 + i),
           Main.Camera,
-          GUI.paintIconWidth,
-          GUI.iconHeight,
           ["paint-pick"],
           () => {
             SmallIcon.UnLockCameraRotation();

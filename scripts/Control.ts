@@ -95,7 +95,7 @@ class Control {
         let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
         correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
         let coordinates: BABYLON.Vector3 = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
-        let newBrick: Brick = Brick.TryAdd(coordinates, this.width, this.height, this.length);
+        let newBrick: Brick = Brick.TryAdd(coordinates, this.width, this.height, this.length, this.rotation);
         if (newBrick) {
           let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
           brickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
@@ -107,7 +107,7 @@ class Control {
     if (Control.mode === 2) {
       if (pick.hit) {
         if (pick.pickedMesh instanceof Brick) {
-          pick.pickedMesh.dispose();
+          pick.pickedMesh.Dispose();
         }
       }
     }
@@ -134,6 +134,7 @@ class Control {
 
   private static _meshAimed: BABYLON.AbstractMesh;
   public static Update(): void {
+    Control.CheckHeadTilt();
     Control.previewBrick.isVisible = false;
     Icon.UnlitAll();
     SmallIcon.UnlitAll();
@@ -166,7 +167,6 @@ class Control {
           }
         }
         if (Control.mode === 1) {
-          // Control.CheckHeadTilt();
           let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
           correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
           Control.previewBrick.isVisible = true;
@@ -179,16 +179,14 @@ class Control {
     }
   }
 
-  private static _cameraRight: BABYLON.Vector3 = BABYLON.Vector3.Zero();
-
   private static CheckHeadTilt(): void {
-    BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.X, Main.Camera.getWorldMatrix(), Control._cameraRight);
-    let angle: number = VRMath.Angle(BABYLON.Axis.Y, BABYLON.Vector3.Cross(Main.Camera.upVector, Main.Camera.getForwardRay().direction));
-    console.log(angle - Math.PI / 2);
-    if (angle - Math.PI / 2 > Math.PI / 6) {
-      Control.HeadTilted();
-    } else {
-      Control._lastHeadTiltedTime = (new Date()).getTime();
+  if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
+      let angle: number = Main.Camera.deviceRotationQuaternion.toEulerAngles().z;
+      if (Math.abs(angle) > Math.PI / 6) {
+        Control.HeadTilted();
+      } else {
+        Control._lastHeadTiltedTime = (new Date()).getTime();
+      }
     }
   }
 
@@ -218,5 +216,6 @@ class Control {
     previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
     previewBrickMaterial.alpha = 0.5;
     Control.previewBrick.material = previewBrickMaterial;
+    Control.previewBrick.rotation.y = Control.rotation * Math.PI / 2;
   }
 }

@@ -1,13 +1,20 @@
 class Brick extends BABYLON.Mesh {
-    constructor(c, width, height, length) {
-        console.log("Add new Brick at " + c.x + " " + c.y + " " + c.z);
+    constructor(c, width, height, length, orientation) {
         super("Brick", Main.Scene);
+        this.coordinates = BABYLON.Vector3.Zero();
+        console.log("Add new Brick at " + c.x + " " + c.y + " " + c.z);
+        this.coordinates.copyFrom(c);
+        this.width = width;
+        this.height = height;
+        this.length = length;
+        this.orientation = orientation;
+        this.rotation.y = orientation * Math.PI / 2;
         BrickData.CubicalData(width, height, length).applyToMesh(this);
         this.position = Brick.BrickCoordinatesToWorldPos(c);
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
                 for (let k = 0; k < length; k++) {
-                    Brick.Occupy(c.add(new BABYLON.Vector3(i, j, k)));
+                    Brick.Occupy(c.add(VRMath.RotateVector3(new BABYLON.Vector3(i, j, k), orientation)));
                 }
             }
         }
@@ -49,18 +56,37 @@ class Brick extends BABYLON.Mesh {
         }
         Brick.grid[c.x][c.y][c.z] = true;
     }
-    static TryAdd(c, width, height, length) {
+    static Free(c) {
+        if (Brick.grid[c.x] === undefined) {
+            Brick.grid[c.x] = [];
+        }
+        if (Brick.grid[c.x][c.y] === undefined) {
+            Brick.grid[c.x][c.y] = [];
+        }
+        Brick.grid[c.x][c.y][c.z] = false;
+    }
+    static TryAdd(c, width, height, length, orientation) {
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
                 for (let k = 0; k < length; k++) {
-                    if (Brick.IsOccupied(c.add(new BABYLON.Vector3(i, j, k)))) {
+                    if (Brick.IsOccupied(c.add(VRMath.RotateVector3(new BABYLON.Vector3(i, j, k), orientation)))) {
                         return undefined;
                     }
                 }
             }
         }
-        let brick = new Brick(c, width, height, length);
+        let brick = new Brick(c, width, height, length, orientation);
         return brick;
+    }
+    Dispose() {
+        this.dispose();
+        for (let i = 0; i < this.width; i++) {
+            for (let j = 0; j < this.height; j++) {
+                for (let k = 0; k < this.length; k++) {
+                    Brick.Free(this.coordinates.add(VRMath.RotateVector3(new BABYLON.Vector3(i, j, k), this.orientation)));
+                }
+            }
+        }
     }
     Hightlight(color) {
         this.renderOutline = true;
@@ -71,8 +97,8 @@ class Brick extends BABYLON.Mesh {
         this.outlineColor.copyFromFloats(0, 0, 0);
     }
     static UnlitAll() {
-        Brick.instances.forEach((i) => {
-            i.Unlit();
+        Brick.instances.forEach((b) => {
+            b.Unlit();
         });
     }
 }
@@ -385,7 +411,7 @@ class Control {
                 let correctedPickPoint = BABYLON.Vector3.Zero();
                 correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
                 let coordinates = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
-                let newBrick = Brick.TryAdd(coordinates, this.width, this.height, this.length);
+                let newBrick = Brick.TryAdd(coordinates, this.width, this.height, this.length, this.rotation);
                 if (newBrick) {
                     let brickMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
                     brickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
@@ -397,7 +423,7 @@ class Control {
         if (Control.mode === 2) {
             if (pick.hit) {
                 if (pick.pickedMesh instanceof Brick) {
-                    pick.pickedMesh.dispose();
+                    pick.pickedMesh.Dispose();
                 }
             }
         }
@@ -420,6 +446,7 @@ class Control {
         }
     }
     static Update() {
+        Control.CheckHeadTilt();
         Control.previewBrick.isVisible = false;
         Icon.UnlitAll();
         SmallIcon.UnlitAll();
@@ -459,14 +486,14 @@ class Control {
         }
     }
     static CheckHeadTilt() {
-        BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.X, Main.Camera.getWorldMatrix(), Control._cameraRight);
-        let angle = VRMath.Angle(BABYLON.Axis.Y, BABYLON.Vector3.Cross(Main.Camera.upVector, Main.Camera.getForwardRay().direction));
-        console.log(angle - Math.PI / 2);
-        if (angle - Math.PI / 2 > Math.PI / 6) {
-            Control.HeadTilted();
-        }
-        else {
-            Control._lastHeadTiltedTime = (new Date()).getTime();
+        if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
+            let angle = Main.Camera.deviceRotationQuaternion.toEulerAngles().z;
+            if (Math.abs(angle) > Math.PI / 6) {
+                Control.HeadTilted();
+            }
+            else {
+                Control._lastHeadTiltedTime = (new Date()).getTime();
+            }
         }
     }
     static HeadTilted() {
@@ -493,6 +520,7 @@ class Control {
         previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         previewBrickMaterial.alpha = 0.5;
         Control.previewBrick.material = previewBrickMaterial;
+        Control.previewBrick.rotation.y = Control.rotation * Math.PI / 2;
     }
 }
 Control.DOUBLEPOINTERDELAY = 500;
@@ -506,39 +534,42 @@ Control._height = 1;
 Control._length = 1;
 Control._color = "efefef";
 Control._rotation = 0;
-Control._cameraRight = BABYLON.Vector3.Zero();
 class GUI {
     static CreateGUI() {
-        let buildIconsBeta = -GUI.iconBeta / 2;
-        Main.moveIcon = new SmallIcon("move-icon", VRMath.XAngleYAngle(0, -3 * GUI.iconBeta / 2), Main.Camera, GUI.iconWidth, GUI.mainIconHeight, [""], () => {
+        Main.moveIcon = new SmallIcon("move-icon", "L0", Main.Camera, [""], () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("brick-pick");
+            SmallIcon.HideClass("paint-pick");
             SmallIcon.HideClass("brick-cat");
             Control.mode = 0;
         });
-        Main.buildIcon = new SmallIcon("build-icon", VRMath.XAngleYAngle(0, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.mainIconHeight, [""], () => {
+        Main.buildIcon = new SmallIcon("build-icon", "L1", Main.Camera, [""], () => {
             SmallIcon.LockCameraRotation();
             SmallIcon.HideClass("brick-pick");
+            SmallIcon.HideClass("paint-pick");
             SmallIcon.ShowClass("brick-cat");
             Control.mode = 5;
         });
-        Main.deleteIcon = new SmallIcon("paint-icon", VRMath.XAngleYAngle(0, GUI.iconBeta / 2), Main.Camera, GUI.iconWidth, GUI.mainIconHeight, [""], () => {
+        Main.deleteIcon = new SmallIcon("paint-icon", "L2", Main.Camera, [""], () => {
             SmallIcon.LockCameraRotation();
+            SmallIcon.HideClass("brick-pick");
+            SmallIcon.HideClass("brick-cat");
             SmallIcon.ShowClass("paint-pick");
             Control.mode = 5;
         });
-        Main.deleteIcon = new SmallIcon("delete-icon", VRMath.XAngleYAngle(0, 3 * GUI.iconBeta / 2), Main.Camera, GUI.iconWidth, GUI.mainIconHeight, [""], () => {
+        Main.deleteIcon = new SmallIcon("delete-icon", "L3", Main.Camera, [""], () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("brick-pick");
             SmallIcon.HideClass("brick-cat");
+            SmallIcon.HideClass("paint-pick");
             Control.mode = 2;
         });
-        new SmallIcon("bricks/brick-s-bar", VRMath.XAngleYAngle(GUI.iconAlphaZero + 0 * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-cat"], () => {
+        new SmallIcon("bricks/brick-s-bar", "M0", Main.Camera, ["brick-cat"], () => {
             SmallIcon.HideClass("brick-cat");
             SmallIcon.ShowClass("brick-s-bar");
         }).Hide();
         [1, 2, 4, 6, 8].forEach((v, i) => {
-            new SmallIcon("bricks/brick-" + v + "-1-1", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-pick", "brick-s-bar"], () => {
+            new SmallIcon("bricks/brick-" + v + "-1-1", "M" + i, Main.Camera, ["brick-pick", "brick-s-bar"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-s-bar");
                 Control.width = v;
@@ -547,12 +578,12 @@ class GUI {
                 Control.mode = 1;
             }).Hide();
         });
-        new SmallIcon("bricks/brick-m-bar", VRMath.XAngleYAngle(GUI.iconAlphaZero + 1 * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-cat"], () => {
+        new SmallIcon("bricks/brick-m-bar", "M1", Main.Camera, ["brick-cat"], () => {
             SmallIcon.HideClass("brick-cat");
             SmallIcon.ShowClass("brick-m-bar");
         }).Hide();
         [1, 2, 4, 6, 8].forEach((v, i) => {
-            new SmallIcon("bricks/brick-" + v + "-3-1", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-pick", "brick-m-bar"], () => {
+            new SmallIcon("bricks/brick-" + v + "-3-1", "M" + i, Main.Camera, ["brick-pick", "brick-m-bar"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-m-bar");
                 Control.width = v;
@@ -561,12 +592,12 @@ class GUI {
                 Control.mode = 1;
             }).Hide();
         });
-        new SmallIcon("bricks/brick-s-brick", VRMath.XAngleYAngle(GUI.iconAlphaZero + 2 * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-cat"], () => {
+        new SmallIcon("bricks/brick-s-brick", "M2", Main.Camera, ["brick-cat"], () => {
             SmallIcon.HideClass("brick-cat");
             SmallIcon.ShowClass("brick-s-brick");
         }).Hide();
         [2, 4, 6, 8].forEach((v, i) => {
-            new SmallIcon("bricks/brick-" + v + "-1-2", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-pick", "brick-s-brick"], () => {
+            new SmallIcon("bricks/brick-" + v + "-1-2", "M" + i, Main.Camera, ["brick-pick", "brick-s-brick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-s-brick");
                 Control.width = v;
@@ -575,12 +606,12 @@ class GUI {
                 Control.mode = 1;
             }).Hide();
         });
-        new SmallIcon("bricks/brick-m-brick", VRMath.XAngleYAngle(GUI.iconAlphaZero + 3 * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-cat"], () => {
+        new SmallIcon("bricks/brick-m-brick", "M3", Main.Camera, ["brick-cat"], () => {
             SmallIcon.HideClass("brick-cat");
             SmallIcon.ShowClass("brick-m-brick");
         }).Hide();
         [2, 4, 6, 8].forEach((v, i) => {
-            new SmallIcon("bricks/brick-" + v + "-3-2", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, buildIconsBeta), Main.Camera, GUI.iconWidth, GUI.iconHeight, ["brick-pick", "brick-m-brick"], () => {
+            new SmallIcon("bricks/brick-" + v + "-3-2", "M" + i, Main.Camera, ["brick-pick", "brick-m-brick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-m-brick");
                 Control.width = v;
@@ -589,15 +620,13 @@ class GUI {
                 Control.mode = 1;
             }).Hide();
         });
-        let paintIconBetaLeft = GUI.iconBeta / 2 - GUI.iconBeta / 7;
-        let paintIconBetaRight = GUI.iconBeta / 2 + GUI.iconBeta / 7;
         [
             { name: "black", color: "232323" },
             { name: "red", color: "f45342" },
             { name: "green", color: "77f442" },
             { name: "blue", color: "42b0f4" }
         ].forEach((c, i) => {
-            new SmallIcon("paint/" + c.name + "", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, paintIconBetaLeft), Main.Camera, GUI.paintIconWidth, GUI.iconHeight, ["paint-pick"], () => {
+            new SmallIcon("paint/" + c.name + "", "S" + i, Main.Camera, ["paint-pick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("paint-pick");
                 Control.color = c.color;
@@ -610,7 +639,7 @@ class GUI {
             { name: "purple", color: "c242f4" },
             { name: "orange", color: "f48c42" }
         ].forEach((c, i) => {
-            new SmallIcon("paint/" + c.name + "", VRMath.XAngleYAngle(GUI.iconAlphaZero + i * GUI.iconAlpha, paintIconBetaRight), Main.Camera, GUI.paintIconWidth, GUI.iconHeight, ["paint-pick"], () => {
+            new SmallIcon("paint/" + c.name + "", "S" + (4 + i), Main.Camera, ["paint-pick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("paint-pick");
                 Control.color = c.color;
@@ -734,6 +763,27 @@ class Icon extends BABYLON.Mesh {
 Icon.instances = [];
 Icon.onIconFrameDataLoaded = [];
 Icon.iconFrameDataLoading = false;
+class IconData {
+    constructor(vertexData, position, rotation) {
+        this.vertexData = vertexData;
+        this.position = position;
+        this.rotation = rotation;
+    }
+}
+class IconLoader {
+    static LoadIcons(callback) {
+        BABYLON.SceneLoader.ImportMesh("", "./datas/icon-base.babylon", "", Main.Scene, (meshes) => {
+            for (let i = 0; i < meshes.length; i++) {
+                let m = meshes[i];
+                if (m instanceof BABYLON.Mesh) {
+                    IconLoader.datas.set(m.name, new IconData(BABYLON.VertexData.ExtractFromMesh(m), m.position.clone(), m.rotation.clone()));
+                }
+            }
+            callback();
+        });
+    }
+}
+IconLoader.datas = new Map();
 class Interact {
     static ButtonDown() {
         BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Z, Main.Camera.getWorldMatrix(), Interact._camForward);
@@ -789,8 +839,9 @@ class Main {
         let groundMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
         groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
         groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+        groundMaterial.alpha = 0.2;
         ground.material = groundMaterial;
-        GUI.CreateGUI();
+        IconLoader.LoadIcons(GUI.CreateGUI);
     }
     CreateDevShowBrickScene() {
         Main.Scene = new BABYLON.Scene(Main.Engine);
@@ -849,26 +900,40 @@ $(document).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", (e
     }
 });
 class VRMath {
+    static IsNanOrZero(n) {
+        return isNaN(n) || n === 0;
+    }
+    static ProjectPerpendicularAtToRef(v, at, ref) {
+        let k = BABYLON.Vector3.Dot(v, at);
+        k = k / at.lengthSquared();
+        ref.copyFrom(v);
+        ref.subtractInPlace(at.scale(k));
+    }
     static ProjectPerpendicularAt(v, at) {
-        let p = BABYLON.Vector3.Zero();
-        let k = (v.x * at.x + v.y * at.y + v.z * at.z);
-        k = k / (at.x * at.x + at.y * at.y + at.z * at.z);
-        p.copyFrom(v);
-        p.subtractInPlace(at.multiplyByFloats(k, k, k));
-        return p;
+        let out = BABYLON.Vector3.Zero();
+        VRMath.ProjectPerpendicularAtToRef(v, at, out);
+        return out;
     }
     static Angle(from, to) {
-        let pFrom = BABYLON.Vector3.Normalize(from);
-        let pTo = BABYLON.Vector3.Normalize(to);
-        let angle = Math.acos(BABYLON.Vector3.Dot(pFrom, pTo));
-        return angle;
+        return Math.acos(BABYLON.Vector3.Dot(from, to) / from.length() / to.length());
     }
-    static AngleFromToAround(from, to, around) {
+    static AngleFromToAround(from, to, around, onlyPositive = false) {
         let pFrom = VRMath.ProjectPerpendicularAt(from, around).normalize();
+        if (VRMath.IsNanOrZero(pFrom.lengthSquared())) {
+            return NaN;
+        }
         let pTo = VRMath.ProjectPerpendicularAt(to, around).normalize();
+        if (VRMath.IsNanOrZero(pTo.lengthSquared())) {
+            return NaN;
+        }
         let angle = Math.acos(BABYLON.Vector3.Dot(pFrom, pTo));
         if (BABYLON.Vector3.Dot(BABYLON.Vector3.Cross(pFrom, pTo), around) < 0) {
-            angle = -angle;
+            if (onlyPositive) {
+                angle = 2 * Math.PI - angle;
+            }
+            else {
+                angle = -angle;
+            }
         }
         return angle;
     }
@@ -881,6 +946,20 @@ class VRMath {
         BABYLON.Vector3.TransformNormalToRef(vector, xMatrix, vector);
         BABYLON.Vector3.TransformNormalToRef(vector, yMatrix, vector);
         return vector;
+    }
+    static RotateVector3(v, orientation) {
+        if (orientation === 0) {
+            return v;
+        }
+        else if (orientation === 1) {
+            return new BABYLON.Vector3(v.z, v.y, -v.x);
+        }
+        else if (orientation === 2) {
+            return new BABYLON.Vector3(-v.x, v.y, -v.z);
+        }
+        else if (orientation === 3) {
+            return new BABYLON.Vector3(-v.z, v.y, v.x);
+        }
     }
 }
 class PrettyBrick extends BABYLON.Mesh {
@@ -913,21 +992,23 @@ class PrettyBrick extends BABYLON.Mesh {
     }
 }
 class SmallIcon extends BABYLON.Mesh {
-    constructor(picture, position, camera, width = 0.5, height = 0.5, iconClass = [], onActivate = () => { return; }) {
+    constructor(picture, icon, camera, iconClass = [], onActivate = () => { return; }) {
         super(picture, camera.getScene());
         this.localPosition = BABYLON.Vector3.Zero();
+        this.localRotation = BABYLON.Vector3.Zero();
         this.iconClass = [];
         this._cameraUp = BABYLON.Vector3.Zero();
         this._cameraForward = BABYLON.Vector3.Zero();
         this._targetPosition = BABYLON.Vector3.Zero();
         this._worldishMatrix = BABYLON.Matrix.Identity();
         this._alphaCam = 0;
-        this.localPosition.copyFrom(position);
+        this.localPosition.copyFrom(IconLoader.datas.get(icon).position);
+        this.localPosition.copyFrom(IconLoader.datas.get(icon).rotation);
         this.camera = camera;
-        this.rotation.copyFromFloats(0, 0, 0);
+        this.rotationQuaternion = BABYLON.Quaternion.Identity();
         this.onActivate = onActivate;
         this.iconClass = iconClass;
-        SmallIcon.SmallIconMeshData(width, height).applyToMesh(this);
+        IconLoader.datas.get(icon).vertexData.applyToMesh(this);
         let iconMaterial = new BABYLON.StandardMaterial(this.name + "-mat", this.getScene());
         iconMaterial.emissiveColor.copyFromFloats(1, 1, 1);
         iconMaterial.diffuseTexture = new BABYLON.Texture("./datas/textures/" + this.name + ".png", this.getScene());
@@ -947,14 +1028,7 @@ class SmallIcon extends BABYLON.Mesh {
     static UnLockCameraRotation() {
         SmallIcon.lockCameraRotation = false;
     }
-    static SmallIconMeshData(width, height) {
-        let quad = BABYLON.MeshBuilder.CreatePlane("Quad", { width: width, height: height }, Main.Scene);
-        let data = BABYLON.VertexData.ExtractFromMesh(quad);
-        quad.dispose();
-        return data;
-    }
     Hightlight() {
-        this.lookAt(Main.Camera.position, 0, Math.PI, 0, BABYLON.Space.LOCAL);
         this.edgesColor.copyFromFloats(0, 0, 0, 1);
         this.edgesWidth = 0.5;
         if (this.material instanceof BABYLON.StandardMaterial) {
@@ -1012,7 +1086,7 @@ class SmallIcon extends BABYLON.Mesh {
             return;
         }
         BABYLON.Vector3.LerpToRef(this.position, this._targetPosition, 0.05, this.position);
-        this.lookAt(this.camera.position);
+        this.rotationQuaternion = BABYLON.Quaternion.Slerp(this.rotationQuaternion, rotationQuaternion, 0.05);
     }
 }
 SmallIcon.lockCameraRotation = false;

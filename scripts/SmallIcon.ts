@@ -8,6 +8,7 @@ class SmallIcon extends BABYLON.Mesh {
     SmallIcon.lockCameraRotation = false;
   }
   public static instances: SmallIcon[] = [];
+  /*
   private static SmallIconMeshData(width: number, height: number): BABYLON.VertexData {
     let quad: BABYLON.Mesh = BABYLON.MeshBuilder.CreatePlane(
       "Quad",
@@ -17,28 +18,29 @@ class SmallIcon extends BABYLON.Mesh {
     quad.dispose();
     return data;
   }
+  */
 
   private localPosition: BABYLON.Vector3 = BABYLON.Vector3.Zero();
+  private localRotation: BABYLON.Vector3 = BABYLON.Vector3.Zero();
   private camera: BABYLON.FreeCamera;
   public iconClass: string[] = [];
   public onActivate: () => void;
 
   constructor(
     picture: string,
-    position: BABYLON.Vector3,
+    icon: string,
     camera: BABYLON.FreeCamera,
-    width: number = 0.5,
-    height: number = 0.5,
     iconClass: string[] = [],
     onActivate: () => void = () => {return;}
   ) {
     super(picture, camera.getScene());
-    this.localPosition.copyFrom(position);
+    this.localPosition.copyFrom(IconLoader.datas.get(icon).position);
+    this.localPosition.copyFrom(IconLoader.datas.get(icon).rotation);
     this.camera = camera;
-    this.rotation.copyFromFloats(0, 0, 0);
+    this.rotationQuaternion = BABYLON.Quaternion.Identity();
     this.onActivate = onActivate;
     this.iconClass = iconClass;
-    SmallIcon.SmallIconMeshData(width, height).applyToMesh(this);
+    IconLoader.datas.get(icon).vertexData.applyToMesh(this);
     let iconMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial(this.name + "-mat", this.getScene());
     iconMaterial.emissiveColor.copyFromFloats(1, 1, 1);
     iconMaterial.diffuseTexture = new BABYLON.Texture("./datas/textures/" + this.name + ".png", this.getScene());
@@ -56,7 +58,6 @@ class SmallIcon extends BABYLON.Mesh {
   }
 
   public Hightlight(): void {
-    this.lookAt(Main.Camera.position, 0, Math.PI, 0, BABYLON.Space.LOCAL);
     this.edgesColor.copyFromFloats(0, 0, 0, 1);
     this.edgesWidth = 0.5;
     if (this.material instanceof BABYLON.StandardMaterial) {
@@ -137,6 +138,6 @@ class SmallIcon extends BABYLON.Mesh {
       return;
     }
     BABYLON.Vector3.LerpToRef(this.position, this._targetPosition, 0.05, this.position);
-    this.lookAt(this.camera.position);
+    this.rotationQuaternion = BABYLON.Quaternion.Slerp(this.rotationQuaternion, rotationQuaternion, 0.05);
   }
 }

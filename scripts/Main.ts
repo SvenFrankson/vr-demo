@@ -1,4 +1,5 @@
 /// <reference path="../lib/babylon.d.ts"/>
+/// <reference path="../lib/jquery.d.ts"/>
 
 class Main {
 
@@ -59,9 +60,10 @@ class Main {
     let groundMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
     groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
     groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+    groundMaterial.alpha = 0.2;
     ground.material = groundMaterial;
 
-    GUI.CreateGUI();
+    IconLoader.LoadIcons(GUI.CreateGUI);
   }
 
   public CreateDevShowBrickScene(): void {
