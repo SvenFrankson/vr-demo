@@ -22,7 +22,6 @@ class Main {
 
   CreateScene(): void {
     $("canvas").show();
-    $("#main-menu").hide();
     Main.Scene = new BABYLON.Scene(Main.Engine);
     Main.Scene.registerBeforeRender(Control.Update);
 
@@ -131,8 +130,7 @@ $(document).on(
   "webkitfullscreenchange mozfullscreenchange fullscreenchange",
   (e) => {
     if (!!Main.Engine.isFullscreen) {
-      $("canvas").hide();
-      $("#main-menu").show();
+      // $("canvas").hide();
     }
   }
 );

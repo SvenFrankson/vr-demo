@@ -350,6 +350,13 @@ class Control {
             Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString("#" + this.color);
         }
     }
+    static get rotation() {
+        return this._rotation;
+    }
+    static set rotation(v) {
+        this._rotation = v % 4;
+        Control.previewBrick.rotation.y = v * Math.PI / 2;
+    }
     static onPointerDown() {
         let t = (new Date()).getTime();
         if ((t - Control._lastPointerDownTime) < Control.DOUBLEPOINTERDELAY) {
@@ -451,6 +458,24 @@ class Control {
             Control.UpdateModeMove();
         }
     }
+    static CheckHeadTilt() {
+        BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.X, Main.Camera.getWorldMatrix(), Control._cameraRight);
+        let angle = VRMath.Angle(BABYLON.Axis.Y, BABYLON.Vector3.Cross(Main.Camera.upVector, Main.Camera.getForwardRay().direction));
+        console.log(angle - Math.PI / 2);
+        if (angle - Math.PI / 2 > Math.PI / 6) {
+            Control.HeadTilted();
+        }
+        else {
+            Control._lastHeadTiltedTime = (new Date()).getTime();
+        }
+    }
+    static HeadTilted() {
+        let t = (new Date()).getTime();
+        if ((t - Control._lastHeadTiltedTime) > Control.HEADTILTDELAY) {
+            Control.rotation += 1;
+            Control._lastHeadTiltedTime = (new Date()).getTime();
+        }
+    }
     static UpdateModeMove() {
         if (Control._cameraSpeed !== 0) {
             let move = Main.Camera.getForwardRay().direction;
@@ -472,12 +497,16 @@ class Control {
 }
 Control.DOUBLEPOINTERDELAY = 500;
 Control._lastPointerDownTime = 0;
+Control.HEADTILTDELAY = 1000;
+Control._lastHeadTiltedTime = 0;
 Control._cameraSpeed = 0;
 Control._mode = 0;
 Control._width = 1;
 Control._height = 1;
 Control._length = 1;
 Control._color = "efefef";
+Control._rotation = 0;
+Control._cameraRight = BABYLON.Vector3.Zero();
 class GUI {
     static CreateGUI() {
         let buildIconsBeta = -GUI.iconBeta / 2;
@@ -730,7 +759,6 @@ class Main {
     }
     CreateScene() {
         $("canvas").show();
-        $("#main-menu").hide();
         Main.Scene = new BABYLON.Scene(Main.Engine);
         Main.Scene.registerBeforeRender(Control.Update);
         if (navigator.getVRDisplays) {
@@ -818,8 +846,6 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 $(document).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", (e) => {
     if (!!Main.Engine.isFullscreen) {
-        $("canvas").hide();
-        $("#main-menu").show();
     }
 });
 class VRMath {

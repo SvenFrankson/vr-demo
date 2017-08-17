@@ -1,6 +1,8 @@
 class Control {
   private static DOUBLEPOINTERDELAY: number = 500;
   private static _lastPointerDownTime: number = 0;
+  private static HEADTILTDELAY: number = 1000;
+  private static _lastHeadTiltedTime: number = 0;
   private static _cameraSpeed: number = 0;
   private static _mode: number = 0;
   public static get mode(): number {
@@ -48,6 +50,14 @@ class Control {
     if (Control.previewBrick.material instanceof BABYLON.StandardMaterial) {
       Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString("#" + this.color);
     }
+  }
+  private static _rotation: number = 0;
+  public static get rotation(): number {
+    return this._rotation;
+  }
+  public static set rotation(v: number) {
+    this._rotation = v % 4;
+    Control.previewBrick.rotation.y = v * Math.PI / 2;
   }
 
   public static onPointerDown(): void {
@@ -156,6 +166,7 @@ class Control {
           }
         }
         if (Control.mode === 1) {
+          // Control.CheckHeadTilt();
           let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
           correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
           Control.previewBrick.isVisible = true;
@@ -165,6 +176,27 @@ class Control {
     }
     if (Control.mode === 0) {
       Control.UpdateModeMove();
+    }
+  }
+
+  private static _cameraRight: BABYLON.Vector3 = BABYLON.Vector3.Zero();
+
+  private static CheckHeadTilt(): void {
+    BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.X, Main.Camera.getWorldMatrix(), Control._cameraRight);
+    let angle: number = VRMath.Angle(BABYLON.Axis.Y, BABYLON.Vector3.Cross(Main.Camera.upVector, Main.Camera.getForwardRay().direction));
+    console.log(angle - Math.PI / 2);
+    if (angle - Math.PI / 2 > Math.PI / 6) {
+      Control.HeadTilted();
+    } else {
+      Control._lastHeadTiltedTime = (new Date()).getTime();
+    }
+  }
+
+  private static HeadTilted(): void {
+    let t: number = (new Date()).getTime();
+    if ((t - Control._lastHeadTiltedTime) > Control.HEADTILTDELAY) {
+      Control.rotation += 1;
+      Control._lastHeadTiltedTime = (new Date()).getTime();
     }
   }
 
