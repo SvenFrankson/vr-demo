@@ -41,7 +41,7 @@ class Control {
     this._length = v;
     BrickData.CubicalData(this.width, this.height, this.length).applyToMesh(Control.previewBrick);
   }
-  private static _color: string = "efefef";
+  private static _color: string = "#efefef";
   public static get color(): string {
     return this._color;
   }

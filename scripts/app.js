@@ -21,7 +21,7 @@ class Brick extends BABYLON.Mesh {
         this.material = BrickMaterial.GetMaterial(color);
         this.freezeWorldMatrix();
         Brick.instances.push(this);
-        localStorage.setItem(Main.currentSave, JSON.stringify(Brick.Serialize()));
+        SaveManager.Save();
     }
     static WorldPosToBrickCoordinates(worldPosition) {
         let coordinates = BABYLON.Vector3.Zero();
@@ -99,6 +99,7 @@ class Brick extends BABYLON.Mesh {
     }
     set color(c) {
         this.material = BrickMaterial.GetMaterial(c);
+        SaveManager.Save();
     }
     Dispose() {
         this.dispose();
@@ -579,7 +580,7 @@ Control._mode = 0;
 Control._width = 1;
 Control._height = 1;
 Control._length = 1;
-Control._color = "efefef";
+Control._color = "#efefef";
 Control._rotation = 0;
 class GUI {
     static CreateGUI() {
@@ -850,7 +851,7 @@ Interact._camForward = BABYLON.Vector3.Zero();
 class Main {
     constructor(canvasElement) {
         Main.Canvas = document.getElementById(canvasElement);
-        Main.Engine = new BABYLON.Engine(Main.Canvas, true);
+        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { preserveDrawingBuffer: true });
         Main.Engine.setHardwareScalingLevel(0.25);
     }
     CreateScene() {
@@ -887,10 +888,7 @@ class Main {
         groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         ground.material = groundMaterial;
         IconLoader.LoadIcons(GUI.CreateGUI);
-        let save = JSON.parse(localStorage.getItem(Main.currentSave));
-        if (save) {
-            Brick.UnserializeArray(save);
-        }
+        SaveManager.Load();
     }
     CreateDevShowBrickScene() {
         Main.Scene = new BABYLON.Scene(Main.Engine);
@@ -947,6 +945,29 @@ window.addEventListener("DOMContentLoaded", () => {
 $(document).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", (e) => {
     if (!!Main.Engine.isFullscreen) {
     }
+});
+function UnselectAllSaves() {
+    $(".save").removeClass("panel-primary");
+    $(".save").addClass("panel-default");
+}
+window.addEventListener("DOMContentLoaded", () => {
+    for (let i = 1; i <= 5; i++) {
+        let data = localStorage.getItem("save" + i + "-pic");
+        if (data && data.indexOf("data") !== -1) {
+            $("#save" + i + "-pic").attr("src", data);
+        }
+    }
+    $(".save").on("pointerdown", (e) => {
+        console.log(".");
+        if (e.currentTarget instanceof HTMLElement) {
+            let id = e.currentTarget.id;
+            Main.currentSave = id;
+            UnselectAllSaves();
+            $("#" + id).removeClass("panel-default");
+            $("#" + id).addClass("panel-primary");
+        }
+    });
+    console.log("OK");
 });
 class VRMath {
     static IsNanOrZero(n) {
@@ -1037,6 +1058,18 @@ class PrettyBrick extends BABYLON.Mesh {
                 plot.outlineWidth = 0.05;
                 plot.parent = this;
             }
+        }
+    }
+}
+class SaveManager {
+    static Save() {
+        localStorage.setItem(Main.currentSave, JSON.stringify(Brick.Serialize()));
+        localStorage.setItem(Main.currentSave + "-pic", Main.Canvas.toDataURL("image/png"));
+    }
+    static Load() {
+        let save = JSON.parse(localStorage.getItem(Main.currentSave));
+        if (save) {
+            Brick.UnserializeArray(save);
         }
     }
 }

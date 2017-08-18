@@ -19,7 +19,7 @@ class Main {
 
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
-    Main.Engine = new BABYLON.Engine(Main.Canvas, true);
+    Main.Engine = new BABYLON.Engine(Main.Canvas, true, {preserveDrawingBuffer: true});
     Main.Engine.setHardwareScalingLevel(0.25);
   }
 
@@ -66,10 +66,7 @@ class Main {
 
     IconLoader.LoadIcons(GUI.CreateGUI);
 
-    let save: ISerializedBrick[] = JSON.parse(localStorage.getItem(Main.currentSave));
-    if (save) {
-      Brick.UnserializeArray(save);
-    }
+    SaveManager.Load();
   }
 
   public CreateDevShowBrickScene(): void {

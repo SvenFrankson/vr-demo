@@ -117,6 +117,7 @@ class Brick extends BABYLON.Mesh {
   }
   public set color(c: string) {
     this.material = BrickMaterial.GetMaterial(c);
+    SaveManager.Save();
   }
 
   constructor(
@@ -147,7 +148,7 @@ class Brick extends BABYLON.Mesh {
     this.material = BrickMaterial.GetMaterial(color);
     this.freezeWorldMatrix();
     Brick.instances.push(this);
-    localStorage.setItem(Main.currentSave, JSON.stringify(Brick.Serialize()));
+    SaveManager.Save();
   }
 
   public Dispose(): void {
