@@ -174,10 +174,10 @@ class GUI {
     );
 
     [
-      {name: "black", color: "232323"},
-      {name: "red", color: "f45342"},
-      {name: "green", color: "77f442"},
-      {name: "blue", color: "42b0f4"}
+      {name: "black", color: "#232323"},
+      {name: "red", color: "#f45342"},
+      {name: "green", color: "#77f442"},
+      {name: "blue", color: "#42b0f4"}
     ].forEach(
       (
         c: {name: string, color: string},
@@ -198,10 +198,10 @@ class GUI {
       }
     );
     [
-      {name: "white", color: "efefef"},
-      {name: "yellow", color: "eef442"},
-      {name: "purple", color: "c242f4"},
-      {name: "orange", color: "f48c42"}
+      {name: "white", color: "#efefef"},
+      {name: "yellow", color: "#eef442"},
+      {name: "purple", color: "#c242f4"},
+      {name: "orange", color: "#f48c42"}
     ].forEach(
       (
         c: {name: string, color: string},

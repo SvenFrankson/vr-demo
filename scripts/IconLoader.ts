@@ -1,8 +1,7 @@
 class IconData {
   constructor(
     public vertexData: BABYLON.VertexData,
-    public position: BABYLON.Vector3,
-    public rotation: BABYLON.Vector3
+    public position: BABYLON.Vector3
   ) {}
 }
 
@@ -25,8 +24,7 @@ class IconLoader {
               m.name,
               new IconData(
                 BABYLON.VertexData.ExtractFromMesh(m),
-                m.position.clone(),
-                m.rotation.clone()
+                m.position.clone()
               )
             );
           }

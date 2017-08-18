@@ -48,7 +48,7 @@ class Control {
   public static set color(v: string) {
     this._color = v;
     if (Control.previewBrick.material instanceof BABYLON.StandardMaterial) {
-      Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString("#" + this.color);
+      Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString(this.color);
     }
   }
   private static _rotation: number = 0;
@@ -95,13 +95,7 @@ class Control {
         let correctedPickPoint: BABYLON.Vector3 = BABYLON.Vector3.Zero();
         correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
         let coordinates: BABYLON.Vector3 = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
-        let newBrick: Brick = Brick.TryAdd(coordinates, this.width, this.height, this.length, this.rotation);
-        if (newBrick) {
-          let brickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
-          brickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
-          brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-          newBrick.material = brickMaterial;
-        }
+        Brick.TryAdd(coordinates, this.width, this.height, this.length, this.rotation, Control.color);
       }
     }
     if (Control.mode === 2) {
@@ -114,9 +108,7 @@ class Control {
     if (Control.mode === 4) {
       if (pick.hit) {
         if (pick.pickedMesh instanceof Brick) {
-          if (pick.pickedMesh.material instanceof BABYLON.StandardMaterial) {
-            pick.pickedMesh.material.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
-          }
+          pick.pickedMesh.color = Control.color;
         }
       }
     }
@@ -163,7 +155,7 @@ class Control {
             Control._meshAimed.Hightlight(BABYLON.Color3.Red());
           }
           if (Control.mode === 4) {
-            Control._meshAimed.Hightlight(BABYLON.Color3.FromHexString("#" + Control.color));
+            Control._meshAimed.Hightlight(BABYLON.Color3.FromHexString(Control.color));
           }
         }
         if (Control.mode === 1) {
@@ -183,17 +175,17 @@ class Control {
   if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
       let angle: number = Main.Camera.deviceRotationQuaternion.toEulerAngles().z;
       if (Math.abs(angle) > Math.PI / 6) {
-        Control.HeadTilted();
+        Control.HeadTilted(-BABYLON.MathTools.Sign(angle));
       } else {
         Control._lastHeadTiltedTime = (new Date()).getTime();
       }
     }
   }
 
-  private static HeadTilted(): void {
+  private static HeadTilted(sign: number): void {
     let t: number = (new Date()).getTime();
     if ((t - Control._lastHeadTiltedTime) > Control.HEADTILTDELAY) {
-      Control.rotation += 1;
+      Control.rotation += sign;
       Control._lastHeadTiltedTime = (new Date()).getTime();
     }
   }
@@ -212,7 +204,7 @@ class Control {
     Control.previewBrick.isPickable = false;
     BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
     let previewBrickMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
-    previewBrickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
+    previewBrickMaterial.diffuseColor = BABYLON.Color3.FromHexString(Control.color);
     previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
     previewBrickMaterial.alpha = 0.5;
     Control.previewBrick.material = previewBrickMaterial;

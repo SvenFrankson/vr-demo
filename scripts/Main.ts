@@ -15,6 +15,8 @@ class Main {
 
   public static cursor: BABYLON.Mesh;
 
+  public static currentSave: string;
+
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
     Main.Engine = new BABYLON.Engine(Main.Canvas, true);
@@ -60,10 +62,14 @@ class Main {
     let groundMaterial: BABYLON.StandardMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
     groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
     groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-    groundMaterial.alpha = 0.2;
     ground.material = groundMaterial;
 
     IconLoader.LoadIcons(GUI.CreateGUI);
+
+    let save: ISerializedBrick[] = JSON.parse(localStorage.getItem(Main.currentSave));
+    if (save) {
+      Brick.UnserializeArray(save);
+    }
   }
 
   public CreateDevShowBrickScene(): void {

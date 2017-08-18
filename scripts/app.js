@@ -1,5 +1,5 @@
 class Brick extends BABYLON.Mesh {
-    constructor(c, width, height, length, orientation) {
+    constructor(c, width, height, length, orientation, color) {
         super("Brick", Main.Scene);
         this.coordinates = BABYLON.Vector3.Zero();
         console.log("Add new Brick at " + c.x + " " + c.y + " " + c.z);
@@ -18,8 +18,10 @@ class Brick extends BABYLON.Mesh {
                 }
             }
         }
+        this.material = BrickMaterial.GetMaterial(color);
         this.freezeWorldMatrix();
         Brick.instances.push(this);
+        localStorage.setItem(Main.currentSave, JSON.stringify(Brick.Serialize()));
     }
     static WorldPosToBrickCoordinates(worldPosition) {
         let coordinates = BABYLON.Vector3.Zero();
@@ -65,7 +67,7 @@ class Brick extends BABYLON.Mesh {
         }
         Brick.grid[c.x][c.y][c.z] = false;
     }
-    static TryAdd(c, width, height, length, orientation) {
+    static TryAdd(c, width, height, length, orientation, color) {
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
                 for (let k = 0; k < length; k++) {
@@ -75,8 +77,28 @@ class Brick extends BABYLON.Mesh {
                 }
             }
         }
-        let brick = new Brick(c, width, height, length, orientation);
+        let brick = new Brick(c, width, height, length, orientation, color);
         return brick;
+    }
+    static Serialize() {
+        let serialized = [];
+        Brick.instances.forEach((b) => {
+            serialized.push(b.Serialize());
+        });
+        return serialized;
+    }
+    static UnserializeArray(serialized) {
+        serialized.forEach((data) => {
+            Brick.Unserialize(data);
+        });
+    }
+    get color() {
+        if (this.material instanceof BABYLON.StandardMaterial) {
+            return this.material.diffuseColor.toHexString();
+        }
+    }
+    set color(c) {
+        this.material = BrickMaterial.GetMaterial(c);
     }
     Dispose() {
         this.dispose();
@@ -86,6 +108,10 @@ class Brick extends BABYLON.Mesh {
                     Brick.Free(this.coordinates.add(VRMath.RotateVector3(new BABYLON.Vector3(i, j, k), this.orientation)));
                 }
             }
+        }
+        let index = Brick.instances.indexOf(this);
+        if (index !== -1) {
+            Brick.instances.splice(index, 1);
         }
     }
     Hightlight(color) {
@@ -100,6 +126,22 @@ class Brick extends BABYLON.Mesh {
         Brick.instances.forEach((b) => {
             b.Unlit();
         });
+    }
+    Serialize() {
+        return {
+            i: this.coordinates.x,
+            j: this.coordinates.y,
+            k: this.coordinates.z,
+            orientation: this.orientation,
+            width: this.width,
+            height: this.height,
+            length: this.length,
+            color: this.color
+        };
+    }
+    static Unserialize(data) {
+        let coordinates = new BABYLON.Vector3(data.i, data.j, data.k);
+        return new Brick(coordinates, data.width, data.height, data.length, data.orientation, data.color);
     }
 }
 Brick.instances = [];
@@ -325,6 +367,19 @@ class BrickData {
         indices.push(index);
     }
 }
+class BrickMaterial {
+    static GetMaterial(color) {
+        let material = BrickMaterial.materials.get(color);
+        if (!material) {
+            material = new BABYLON.StandardMaterial("BrickMaterial-" + color, Main.Scene);
+            material.diffuseColor = BABYLON.Color3.FromHexString(color);
+            material.specularColor.copyFromFloats(0.2, 0.2, 0.2);
+            BrickMaterial.materials.set(color, material);
+        }
+        return material;
+    }
+}
+BrickMaterial.materials = new Map();
 class Config {
 }
 Config.XSize = 0.7;
@@ -373,7 +428,7 @@ class Control {
     static set color(v) {
         this._color = v;
         if (Control.previewBrick.material instanceof BABYLON.StandardMaterial) {
-            Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString("#" + this.color);
+            Control.previewBrick.material.diffuseColor = BABYLON.Color3.FromHexString(this.color);
         }
     }
     static get rotation() {
@@ -411,13 +466,7 @@ class Control {
                 let correctedPickPoint = BABYLON.Vector3.Zero();
                 correctedPickPoint.copyFrom(pick.pickedPoint.add(pick.getNormal().scale(0.1)));
                 let coordinates = Brick.WorldPosToBrickCoordinates(correctedPickPoint);
-                let newBrick = Brick.TryAdd(coordinates, this.width, this.height, this.length, this.rotation);
-                if (newBrick) {
-                    let brickMaterial = new BABYLON.StandardMaterial("BrickMaterial", Main.Scene);
-                    brickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
-                    brickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-                    newBrick.material = brickMaterial;
-                }
+                Brick.TryAdd(coordinates, this.width, this.height, this.length, this.rotation, Control.color);
             }
         }
         if (Control.mode === 2) {
@@ -430,9 +479,7 @@ class Control {
         if (Control.mode === 4) {
             if (pick.hit) {
                 if (pick.pickedMesh instanceof Brick) {
-                    if (pick.pickedMesh.material instanceof BABYLON.StandardMaterial) {
-                        pick.pickedMesh.material.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
-                    }
+                    pick.pickedMesh.color = Control.color;
                 }
             }
         }
@@ -470,7 +517,7 @@ class Control {
                         Control._meshAimed.Hightlight(BABYLON.Color3.Red());
                     }
                     if (Control.mode === 4) {
-                        Control._meshAimed.Hightlight(BABYLON.Color3.FromHexString("#" + Control.color));
+                        Control._meshAimed.Hightlight(BABYLON.Color3.FromHexString(Control.color));
                     }
                 }
                 if (Control.mode === 1) {
@@ -489,17 +536,17 @@ class Control {
         if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
             let angle = Main.Camera.deviceRotationQuaternion.toEulerAngles().z;
             if (Math.abs(angle) > Math.PI / 6) {
-                Control.HeadTilted();
+                Control.HeadTilted(-BABYLON.MathTools.Sign(angle));
             }
             else {
                 Control._lastHeadTiltedTime = (new Date()).getTime();
             }
         }
     }
-    static HeadTilted() {
+    static HeadTilted(sign) {
         let t = (new Date()).getTime();
         if ((t - Control._lastHeadTiltedTime) > Control.HEADTILTDELAY) {
-            Control.rotation += 1;
+            Control.rotation += sign;
             Control._lastHeadTiltedTime = (new Date()).getTime();
         }
     }
@@ -516,7 +563,7 @@ class Control {
         Control.previewBrick.isPickable = false;
         BrickData.CubicalData(1, 3, 1).applyToMesh(Control.previewBrick);
         let previewBrickMaterial = new BABYLON.StandardMaterial("PreviewBrickMaterial", Main.Scene);
-        previewBrickMaterial.diffuseColor = BABYLON.Color3.FromHexString("#" + Control.color);
+        previewBrickMaterial.diffuseColor = BABYLON.Color3.FromHexString(Control.color);
         previewBrickMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
         previewBrickMaterial.alpha = 0.5;
         Control.previewBrick.material = previewBrickMaterial;
@@ -621,10 +668,10 @@ class GUI {
             }).Hide();
         });
         [
-            { name: "black", color: "232323" },
-            { name: "red", color: "f45342" },
-            { name: "green", color: "77f442" },
-            { name: "blue", color: "42b0f4" }
+            { name: "black", color: "#232323" },
+            { name: "red", color: "#f45342" },
+            { name: "green", color: "#77f442" },
+            { name: "blue", color: "#42b0f4" }
         ].forEach((c, i) => {
             new SmallIcon("paint/" + c.name + "", "S" + i, Main.Camera, ["paint-pick"], () => {
                 SmallIcon.UnLockCameraRotation();
@@ -634,10 +681,10 @@ class GUI {
             }).Hide();
         });
         [
-            { name: "white", color: "efefef" },
-            { name: "yellow", color: "eef442" },
-            { name: "purple", color: "c242f4" },
-            { name: "orange", color: "f48c42" }
+            { name: "white", color: "#efefef" },
+            { name: "yellow", color: "#eef442" },
+            { name: "purple", color: "#c242f4" },
+            { name: "orange", color: "#f48c42" }
         ].forEach((c, i) => {
             new SmallIcon("paint/" + c.name + "", "S" + (4 + i), Main.Camera, ["paint-pick"], () => {
                 SmallIcon.UnLockCameraRotation();
@@ -764,10 +811,9 @@ Icon.instances = [];
 Icon.onIconFrameDataLoaded = [];
 Icon.iconFrameDataLoading = false;
 class IconData {
-    constructor(vertexData, position, rotation) {
+    constructor(vertexData, position) {
         this.vertexData = vertexData;
         this.position = position;
-        this.rotation = rotation;
     }
 }
 class IconLoader {
@@ -776,7 +822,7 @@ class IconLoader {
             for (let i = 0; i < meshes.length; i++) {
                 let m = meshes[i];
                 if (m instanceof BABYLON.Mesh) {
-                    IconLoader.datas.set(m.name, new IconData(BABYLON.VertexData.ExtractFromMesh(m), m.position.clone(), m.rotation.clone()));
+                    IconLoader.datas.set(m.name, new IconData(BABYLON.VertexData.ExtractFromMesh(m), m.position.clone()));
                 }
             }
             callback();
@@ -839,9 +885,12 @@ class Main {
         let groundMaterial = new BABYLON.StandardMaterial("GroundMaterial", Main.Scene);
         groundMaterial.diffuseColor = BABYLON.Color3.FromHexString("#98f442");
         groundMaterial.specularColor.copyFromFloats(0.2, 0.2, 0.2);
-        groundMaterial.alpha = 0.2;
         ground.material = groundMaterial;
         IconLoader.LoadIcons(GUI.CreateGUI);
+        let save = JSON.parse(localStorage.getItem(Main.currentSave));
+        if (save) {
+            Brick.UnserializeArray(save);
+        }
     }
     CreateDevShowBrickScene() {
         Main.Scene = new BABYLON.Scene(Main.Engine);
@@ -995,7 +1044,6 @@ class SmallIcon extends BABYLON.Mesh {
     constructor(picture, icon, camera, iconClass = [], onActivate = () => { return; }) {
         super(picture, camera.getScene());
         this.localPosition = BABYLON.Vector3.Zero();
-        this.localRotation = BABYLON.Vector3.Zero();
         this.iconClass = [];
         this._cameraUp = BABYLON.Vector3.Zero();
         this._cameraForward = BABYLON.Vector3.Zero();
@@ -1003,7 +1051,6 @@ class SmallIcon extends BABYLON.Mesh {
         this._worldishMatrix = BABYLON.Matrix.Identity();
         this._alphaCam = 0;
         this.localPosition.copyFrom(IconLoader.datas.get(icon).position);
-        this.localPosition.copyFrom(IconLoader.datas.get(icon).rotation);
         this.camera = camera;
         this.rotationQuaternion = BABYLON.Quaternion.Identity();
         this.onActivate = onActivate;
@@ -1076,7 +1123,7 @@ class SmallIcon extends BABYLON.Mesh {
     UpdatePosition() {
         BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Z, this.camera.getWorldMatrix(), this._cameraForward);
         BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Y, this.camera.getWorldMatrix(), this._cameraUp);
-        if (!SmallIcon.lockCameraRotation && this._cameraForward.y > -0.3) {
+        if (!SmallIcon.lockCameraRotation && this._cameraForward.y < 0.3) {
             this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
         }
         let rotationQuaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, this._alphaCam);

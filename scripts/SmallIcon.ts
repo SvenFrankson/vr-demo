@@ -21,7 +21,6 @@ class SmallIcon extends BABYLON.Mesh {
   */
 
   private localPosition: BABYLON.Vector3 = BABYLON.Vector3.Zero();
-  private localRotation: BABYLON.Vector3 = BABYLON.Vector3.Zero();
   private camera: BABYLON.FreeCamera;
   public iconClass: string[] = [];
   public onActivate: () => void;
@@ -35,7 +34,6 @@ class SmallIcon extends BABYLON.Mesh {
   ) {
     super(picture, camera.getScene());
     this.localPosition.copyFrom(IconLoader.datas.get(icon).position);
-    this.localPosition.copyFrom(IconLoader.datas.get(icon).rotation);
     this.camera = camera;
     this.rotationQuaternion = BABYLON.Quaternion.Identity();
     this.onActivate = onActivate;
@@ -119,7 +117,7 @@ class SmallIcon extends BABYLON.Mesh {
   private UpdatePosition(): void {
     BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Z, this.camera.getWorldMatrix(), this._cameraForward);
     BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Y, this.camera.getWorldMatrix(), this._cameraUp);
-    if (!SmallIcon.lockCameraRotation && this._cameraForward.y > -0.3) {
+    if (!SmallIcon.lockCameraRotation && this._cameraForward.y < 0.3) {
       this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
     }
     let rotationQuaternion: BABYLON.Quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, this._alphaCam);

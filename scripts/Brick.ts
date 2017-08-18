@@ -1,3 +1,14 @@
+interface ISerializedBrick {
+  i: number;
+  j: number;
+  k: number;
+  orientation: number;
+  width: number;
+  height: number;
+  length: number;
+  color: string;
+}
+
 class Brick extends BABYLON.Mesh {
   public static instances: Brick[] = [];
   public static grid: boolean[][][] = [];
@@ -60,7 +71,8 @@ class Brick extends BABYLON.Mesh {
     width: number,
     height: number,
     length: number,
-    orientation: number
+    orientation: number,
+    color: string
   ): Brick {
     for (let i: number = 0; i < width; i++) {
       for (let j: number = 0; j < height; j++) {
@@ -71,8 +83,26 @@ class Brick extends BABYLON.Mesh {
         }
       }
     }
-    let brick: Brick = new Brick(c, width, height, length, orientation);
+    let brick: Brick = new Brick(c, width, height, length, orientation, color);
     return brick;
+  }
+
+  public static Serialize(): ISerializedBrick[] {
+    let serialized: ISerializedBrick[] = [];
+    Brick.instances.forEach(
+      (b: Brick) => {
+        serialized.push(b.Serialize());
+      }
+    );
+    return serialized;
+  }
+
+  public static UnserializeArray(serialized: ISerializedBrick[]): void {
+    serialized.forEach(
+      (data: ISerializedBrick) => {
+        Brick.Unserialize(data);
+      }
+    );
   }
 
   private coordinates: BABYLON.Vector3 = BABYLON.Vector3.Zero();
@@ -80,6 +110,14 @@ class Brick extends BABYLON.Mesh {
   private height: number;
   private length: number;
   private orientation: number;
+  public get color(): string {
+    if (this.material instanceof BABYLON.StandardMaterial) {
+      return this.material.diffuseColor.toHexString();
+    }
+  }
+  public set color(c: string) {
+    this.material = BrickMaterial.GetMaterial(c);
+  }
 
   constructor(
     c: BABYLON.Vector3,
@@ -87,6 +125,7 @@ class Brick extends BABYLON.Mesh {
     height: number,
     length: number,
     orientation: number,
+    color: string
   ) {
     super("Brick", Main.Scene);
       console.log("Add new Brick at " + c.x + " " + c.y + " " + c.z);
@@ -105,8 +144,10 @@ class Brick extends BABYLON.Mesh {
         }
       }
     }
+    this.material = BrickMaterial.GetMaterial(color);
     this.freezeWorldMatrix();
     Brick.instances.push(this);
+    localStorage.setItem(Main.currentSave, JSON.stringify(Brick.Serialize()));
   }
 
   public Dispose(): void {
@@ -117,6 +158,10 @@ class Brick extends BABYLON.Mesh {
           Brick.Free(this.coordinates.add(VRMath.RotateVector3(new BABYLON.Vector3(i, j, k), this.orientation)));
         }
       }
+    }
+    let index: number = Brick.instances.indexOf(this);
+    if (index !== -1) {
+      Brick.instances.splice(index, 1);
     }
   }
 
@@ -136,5 +181,27 @@ class Brick extends BABYLON.Mesh {
         b.Unlit();
       }
     );
+  }
+
+  public Serialize(): ISerializedBrick {
+    return {
+      i: this.coordinates.x,
+      j: this.coordinates.y,
+      k: this.coordinates.z,
+      orientation: this.orientation,
+      width: this.width,
+      height: this.height,
+      length: this.length,
+      color: this.color
+    };
+  }
+
+  public static Unserialize(data: ISerializedBrick): Brick {
+    let coordinates: BABYLON.Vector3 = new BABYLON.Vector3(
+      data.i,
+      data.j,
+      data.k
+    );
+    return new Brick(coordinates, data.width, data.height, data.length, data.orientation, data.color);
   }
 }
