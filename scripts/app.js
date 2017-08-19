@@ -1078,7 +1078,6 @@ class SmallIcon extends BABYLON.Mesh {
         super(picture, camera.getScene());
         this.localPosition = BABYLON.Vector3.Zero();
         this.iconClass = [];
-        this._cameraUp = BABYLON.Vector3.Zero();
         this._cameraForward = BABYLON.Vector3.Zero();
         this._targetPosition = BABYLON.Vector3.Zero();
         this._worldishMatrix = BABYLON.Matrix.Identity();
@@ -1154,8 +1153,7 @@ class SmallIcon extends BABYLON.Mesh {
         }
     }
     UpdatePosition() {
-        BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Z, this.camera.getWorldMatrix(), this._cameraForward);
-        BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Y, this.camera.getWorldMatrix(), this._cameraUp);
+        this._cameraForward = this.camera.getForwardRay().direction;
         if (!SmallIcon.lockCameraRotation && this._cameraForward.y < 0.3) {
             this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
         }
