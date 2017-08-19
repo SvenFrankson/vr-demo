@@ -1,4 +1,5 @@
 class GUI {
+  public static cameraGUIMatrix: BABYLON.Matrix = BABYLON.Matrix.Identity();
   public static iconWidth: number = 0.3;
   public static paintIconWidth: number = 0.15;
   public static iconHeight: number = 0.15;
@@ -6,6 +7,20 @@ class GUI {
   public static iconAlphaZero: number = 0.28;
   public static iconAlpha: number = 0.175;
   public static iconBeta: number = 0.8;
+
+  private static _cameraForward: BABYLON.Vector3 = BABYLON.Vector3.Zero();
+  private static _alphaCam: number = 0;
+  public static UpdateCameraGUIMatrix(): void {
+    GUI._cameraForward = Main.Camera.getForwardRay().direction;
+    GUI._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, GUI._cameraForward, BABYLON.Axis.Y);
+    let rotationQuaternion: BABYLON.Quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, GUI._alphaCam);
+    BABYLON.Matrix.ComposeToRef(
+      BABYLON.Vector3.One(),
+      rotationQuaternion,
+      Main.Camera.position,
+      GUI.cameraGUIMatrix
+    );
+  }
 
   public static CreateGUI(): void {
     Main.moveIcon = new SmallIcon(

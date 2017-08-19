@@ -1,5 +1,5 @@
 class Brick extends BABYLON.Mesh {
-    constructor(c, width, height, length, orientation, color) {
+    constructor(c, width, height, length, orientation, color, save = true) {
         super("Brick", Main.Scene);
         this.coordinates = BABYLON.Vector3.Zero();
         console.log("Add new Brick at " + c.x + " " + c.y + " " + c.z);
@@ -21,7 +21,9 @@ class Brick extends BABYLON.Mesh {
         this.material = BrickMaterial.GetMaterial(color);
         this.freezeWorldMatrix();
         Brick.instances.push(this);
-        SaveManager.Save();
+        if (save) {
+            SaveManager.Save();
+        }
     }
     static WorldPosToBrickCoordinates(worldPosition) {
         let coordinates = BABYLON.Vector3.Zero();
@@ -87,9 +89,9 @@ class Brick extends BABYLON.Mesh {
         });
         return serialized;
     }
-    static UnserializeArray(serialized) {
+    static UnserializeArray(serialized, save = false) {
         serialized.forEach((data) => {
-            Brick.Unserialize(data);
+            Brick.Unserialize(data, save);
         });
     }
     get color() {
@@ -140,9 +142,9 @@ class Brick extends BABYLON.Mesh {
             color: this.color
         };
     }
-    static Unserialize(data) {
+    static Unserialize(data, save = true) {
         let coordinates = new BABYLON.Vector3(data.i, data.j, data.k);
-        return new Brick(coordinates, data.width, data.height, data.length, data.orientation, data.color);
+        return new Brick(coordinates, data.width, data.height, data.length, data.orientation, data.color, save);
     }
 }
 Brick.instances = [];
@@ -583,6 +585,12 @@ Control._length = 1;
 Control._color = "#efefef";
 Control._rotation = 0;
 class GUI {
+    static UpdateCameraGUIMatrix() {
+        GUI._cameraForward = Main.Camera.getForwardRay().direction;
+        GUI._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, GUI._cameraForward, BABYLON.Axis.Y);
+        let rotationQuaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, GUI._alphaCam);
+        BABYLON.Matrix.ComposeToRef(BABYLON.Vector3.One(), rotationQuaternion, Main.Camera.position, GUI.cameraGUIMatrix);
+    }
     static CreateGUI() {
         Main.moveIcon = new SmallIcon("move-icon", "L0", Main.Camera, [""], () => {
             SmallIcon.UnLockCameraRotation();
@@ -696,6 +704,7 @@ class GUI {
         });
     }
 }
+GUI.cameraGUIMatrix = BABYLON.Matrix.Identity();
 GUI.iconWidth = 0.3;
 GUI.paintIconWidth = 0.15;
 GUI.iconHeight = 0.15;
@@ -703,6 +712,8 @@ GUI.mainIconHeight = 0.3;
 GUI.iconAlphaZero = 0.28;
 GUI.iconAlpha = 0.175;
 GUI.iconBeta = 0.8;
+GUI._cameraForward = BABYLON.Vector3.Zero();
+GUI._alphaCam = 0;
 class Icon extends BABYLON.Mesh {
     constructor(picture, position, camera, scale = 1, onActivate = () => { return; }) {
         super(picture, camera.getScene());
@@ -889,6 +900,10 @@ class Main {
         ground.material = groundMaterial;
         IconLoader.LoadIcons(GUI.CreateGUI);
         SaveManager.Load();
+        setTimeout(() => {
+            TextManager.DisplayText("Hello", 5000);
+        }, 3000);
+        Main.Scene.registerBeforeRender(GUI.UpdateCameraGUIMatrix);
     }
     CreateDevShowBrickScene() {
         Main.Scene = new BABYLON.Scene(Main.Engine);
@@ -933,8 +948,10 @@ class Main {
         Main.cursor.renderOutline = true;
         Main.cursor.outlineColor.copyFromFloats(0, 0, 0);
         Main.cursor.outlineWidth = 0.05;
+        Main.cursor.renderingGroupId = 1;
     }
 }
+Main.currentSave = "save1";
 window.addEventListener("DOMContentLoaded", () => {
     $("#cardboard-main-icon").on("click", () => {
         let game = new Main("render-canvas");
@@ -944,6 +961,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 $(document).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", (e) => {
     if (!!Main.Engine.isFullscreen) {
+        location.reload();
     }
 });
 function UnselectAllSaves() {
@@ -974,10 +992,14 @@ class VRMath {
         return isNaN(n) || n === 0;
     }
     static ProjectPerpendicularAtToRef(v, at, ref) {
-        let k = BABYLON.Vector3.Dot(v, at);
-        k = k / at.lengthSquared();
-        ref.copyFrom(v);
-        ref.subtractInPlace(at.scale(k));
+        if (v && at) {
+            let k = BABYLON.Vector3.Dot(v, at);
+            k = k / at.lengthSquared();
+            if (isFinite(k)) {
+                ref.copyFrom(v);
+                ref.subtractInPlace(at.scale(k));
+            }
+        }
     }
     static ProjectPerpendicularAt(v, at) {
         let out = BABYLON.Vector3.Zero();
@@ -1069,7 +1091,7 @@ class SaveManager {
     static Load() {
         let save = JSON.parse(localStorage.getItem(Main.currentSave));
         if (save) {
-            Brick.UnserializeArray(save);
+            Brick.UnserializeArray(save, false);
         }
     }
 }
@@ -1169,6 +1191,21 @@ class SmallIcon extends BABYLON.Mesh {
 }
 SmallIcon.lockCameraRotation = false;
 SmallIcon.instances = [];
+class TextManager {
+    static DisplayText(text, duration) {
+        let plane = BABYLON.Mesh.CreatePlane("Plane", 2, Main.Scene);
+        plane.position.z = 2;
+        BABYLON.Vector3.TransformCoordinatesToRef(plane.position, GUI.cameraGUIMatrix, plane.position);
+        plane.lookAt(Main.Camera.position);
+        let texture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(plane);
+        let block = new BABYLON.GUI.TextBlock();
+        block.text = text;
+        block.color = "white";
+        block.fontFamily = "Helvetica";
+        block.fontSize = 100;
+        texture.addControl(block);
+    }
+}
 class Utils {
     static RequestFullscreen() {
         if (Main.Canvas.requestFullscreen) {

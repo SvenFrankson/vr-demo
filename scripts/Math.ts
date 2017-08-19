@@ -5,10 +5,14 @@ class VRMath {
   }
 
   public static ProjectPerpendicularAtToRef(v: BABYLON.Vector3, at: BABYLON.Vector3, ref: BABYLON.Vector3): void {
-    let k: number = BABYLON.Vector3.Dot(v, at);
-    k = k / at.lengthSquared();
-    ref.copyFrom(v);
-    ref.subtractInPlace(at.scale(k));
+    if (v && at) {
+      let k: number = BABYLON.Vector3.Dot(v, at);
+      k = k / at.lengthSquared();
+      if (isFinite(k)) {
+        ref.copyFrom(v);
+        ref.subtractInPlace(at.scale(k));
+      }
+    }
   }
 
   public static ProjectPerpendicularAt(v: BABYLON.Vector3, at: BABYLON.Vector3): BABYLON.Vector3 {

@@ -15,7 +15,7 @@ class Main {
 
   public static cursor: BABYLON.Mesh;
 
-  public static currentSave: string;
+  public static currentSave: string = "save1";
 
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
@@ -67,6 +67,15 @@ class Main {
     IconLoader.LoadIcons(GUI.CreateGUI);
 
     SaveManager.Load();
+
+    setTimeout(
+      () => {
+        TextManager.DisplayText("Hello", 5000);
+      },
+      3000
+    );
+
+    Main.Scene.registerBeforeRender(GUI.UpdateCameraGUIMatrix);
   }
 
   public CreateDevShowBrickScene(): void {
@@ -120,6 +129,7 @@ class Main {
     Main.cursor.renderOutline = true;
     Main.cursor.outlineColor.copyFromFloats(0, 0, 0);
     Main.cursor.outlineWidth = 0.05;
+    Main.cursor.renderingGroupId = 1;
   }
 }
 
@@ -135,7 +145,7 @@ $(document).on(
   "webkitfullscreenchange mozfullscreenchange fullscreenchange",
   (e) => {
     if (!!Main.Engine.isFullscreen) {
-      // $("canvas").hide();
+      location.reload();
     }
   }
 );

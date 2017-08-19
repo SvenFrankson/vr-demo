@@ -97,10 +97,10 @@ class Brick extends BABYLON.Mesh {
     return serialized;
   }
 
-  public static UnserializeArray(serialized: ISerializedBrick[]): void {
+  public static UnserializeArray(serialized: ISerializedBrick[], save: boolean = false): void {
     serialized.forEach(
       (data: ISerializedBrick) => {
-        Brick.Unserialize(data);
+        Brick.Unserialize(data, save);
       }
     );
   }
@@ -126,7 +126,8 @@ class Brick extends BABYLON.Mesh {
     height: number,
     length: number,
     orientation: number,
-    color: string
+    color: string,
+    save: boolean = true
   ) {
     super("Brick", Main.Scene);
       console.log("Add new Brick at " + c.x + " " + c.y + " " + c.z);
@@ -148,7 +149,9 @@ class Brick extends BABYLON.Mesh {
     this.material = BrickMaterial.GetMaterial(color);
     this.freezeWorldMatrix();
     Brick.instances.push(this);
-    SaveManager.Save();
+    if (save) {
+      SaveManager.Save();
+    }
   }
 
   public Dispose(): void {
@@ -197,12 +200,12 @@ class Brick extends BABYLON.Mesh {
     };
   }
 
-  public static Unserialize(data: ISerializedBrick): Brick {
+  public static Unserialize(data: ISerializedBrick, save: boolean = true): Brick {
     let coordinates: BABYLON.Vector3 = new BABYLON.Vector3(
       data.i,
       data.j,
       data.k
     );
-    return new Brick(coordinates, data.width, data.height, data.length, data.orientation, data.color);
+    return new Brick(coordinates, data.width, data.height, data.length, data.orientation, data.color, save);
   }
 }

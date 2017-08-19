@@ -7,7 +7,7 @@ class SaveManager {
   public static Load(): void {
     let save: ISerializedBrick[] = JSON.parse(localStorage.getItem(Main.currentSave));
     if (save) {
-      Brick.UnserializeArray(save);
+      Brick.UnserializeArray(save, false);
     }
   }
 }
