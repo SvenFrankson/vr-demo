@@ -572,8 +572,8 @@ class Control {
         }
     }
     static CheckHeadTilt() {
-        if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
-            let angle = Main.Camera.deviceRotationQuaternion.toEulerAngles().z;
+        if (Main.cameraQuaternion instanceof BABYLON.Quaternion) {
+            let angle = Main.cameraQuaternion.toEulerAngles().z;
             if (Math.abs(angle) > Math.PI / 6) {
                 Control.HeadTilted(-BABYLON.MathTools.Sign(angle));
             }
@@ -902,18 +902,27 @@ Interact._camForward = BABYLON.Vector3.Zero();
 class Main {
     constructor(canvasElement) {
         Main.Canvas = document.getElementById(canvasElement);
-        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { limitDeviceRatio: 0.25, preserveDrawingBuffer: true }, true);
+        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { limitDeviceRatio: 4, preserveDrawingBuffer: true }, true);
     }
-    CreateScene() {
+    static get cameraQuaternion() {
+        if (Main.Camera instanceof BABYLON.WebVRFreeCamera) {
+            return Main.Camera.deviceRotationQuaternion;
+        }
+        else {
+            return Main.Camera.rotationQuaternion;
+        }
+    }
+    CreateScene(vrMode) {
         $("canvas").show();
         Main.Scene = new BABYLON.Scene(Main.Engine);
         Main.Scene.registerBeforeRender(Control.Update);
-        if (navigator.getVRDisplays) {
+        if (vrMode && navigator.getVRDisplays) {
             console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
             Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2), Main.Scene);
         }
         else {
-            console.log("WebVR not supported. Using babylonjs WebVRFreeCamera");
+            console.log("WebVR not supported. Using babylonjs DeviceOrientationCamera");
+            Main.Camera = new BABYLON.DeviceOrientationCamera("VRCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2), Main.Scene);
         }
         Main.Camera.minZ = 0.2;
         Main.Engine.switchFullscreen(true);
@@ -997,12 +1006,18 @@ Main.currentSave = "save1";
 window.addEventListener("DOMContentLoaded", () => {
     $("#cardboard-main-icon").on("click", () => {
         let game = new Main("render-canvas");
-        game.CreateScene();
+        game.CreateScene(true);
+        game.animate();
+    });
+    $("#classic-main-icon").on("click", () => {
+        let game = new Main("render-canvas");
+        game.CreateScene(false);
         game.animate();
     });
 });
 $(document).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", (e) => {
     if (!!Main.Engine.isFullscreen) {
+        location.reload();
     }
 });
 function UnselectAllSaves() {

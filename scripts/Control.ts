@@ -212,8 +212,8 @@ class Control {
   }
 
   private static CheckHeadTilt(): void {
-    if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
-      let angle: number = Main.Camera.deviceRotationQuaternion.toEulerAngles().z;
+    if (Main.cameraQuaternion instanceof BABYLON.Quaternion) {
+      let angle: number = Main.cameraQuaternion.toEulerAngles().z;
       if (Math.abs(angle) > Math.PI / 6) {
         Control.HeadTilted(-BABYLON.MathTools.Sign(angle));
       } else {
