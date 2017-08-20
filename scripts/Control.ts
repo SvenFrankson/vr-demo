@@ -15,6 +15,15 @@ class Control {
     } else {
       Control.previewBrick.isVisible = false;
     }
+    if (Control.mode === 0) {
+      new Text3D(new BABYLON.Vector3(0, 0, 2), "Move Mode", 200, 1000, 1000);
+    } else if (Control.mode === 1) {
+      new Text3D(new BABYLON.Vector3(0, 0, 2), "Build Mode", 200, 1000, 1000);
+    } else if (Control.mode === 4) {
+      new Text3D(new BABYLON.Vector3(0, 0, 2), "Paint Mode", 200, 1000, 1000);
+    } else if (Control.mode === 2) {
+      new Text3D(new BABYLON.Vector3(0, 0, 2), "Delete Mode", 200, 1000, 1000);
+    }
   }
   public static previewBrick: BABYLON.Mesh;
   private static _width: number = 1;
@@ -172,7 +181,7 @@ class Control {
   }
 
   private static CheckHeadTilt(): void {
-  if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
+    if (Main.Camera.deviceRotationQuaternion instanceof BABYLON.Quaternion) {
       let angle: number = Main.Camera.deviceRotationQuaternion.toEulerAngles().z;
       if (Math.abs(angle) > Math.PI / 6) {
         Control.HeadTilted(-BABYLON.MathTools.Sign(angle));

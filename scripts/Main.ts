@@ -19,8 +19,7 @@ class Main {
 
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
-    Main.Engine = new BABYLON.Engine(Main.Canvas, true, {preserveDrawingBuffer: true});
-    Main.Engine.setHardwareScalingLevel(0.25);
+    Main.Engine = new BABYLON.Engine(Main.Canvas, true, {limitDeviceRatio: 0.25}, true);
   }
 
   CreateScene(): void {
@@ -36,7 +35,7 @@ class Main {
         Main.Scene
       );
     } else {
-      console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
+      console.log("WebVR not supported. Using babylonjs WebVRFreeCamera");
     }
     Main.Camera.minZ = 0.2;
     Main.Engine.switchFullscreen(true);
@@ -70,9 +69,15 @@ class Main {
 
     setTimeout(
       () => {
-        TextManager.DisplayText("Hello", 5000);
+        new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
       },
-      3000
+      1000
+    );
+    setTimeout(
+      () => {
+        new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
+      },
+      1000
     );
 
     Main.Scene.registerBeforeRender(GUI.UpdateCameraGUIMatrix);
@@ -145,7 +150,7 @@ $(document).on(
   "webkitfullscreenchange mozfullscreenchange fullscreenchange",
   (e) => {
     if (!!Main.Engine.isFullscreen) {
-      location.reload();
+      // location.reload();
     }
   }
 );

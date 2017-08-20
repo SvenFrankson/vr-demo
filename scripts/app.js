@@ -403,6 +403,18 @@ class Control {
         else {
             Control.previewBrick.isVisible = false;
         }
+        if (Control.mode === 0) {
+            new Text3D(new BABYLON.Vector3(0, 0, 2), "Move Mode", 200, 1000, 1000);
+        }
+        else if (Control.mode === 1) {
+            new Text3D(new BABYLON.Vector3(0, 0, 2), "Build Mode", 200, 1000, 1000);
+        }
+        else if (Control.mode === 4) {
+            new Text3D(new BABYLON.Vector3(0, 0, 2), "Paint Mode", 200, 1000, 1000);
+        }
+        else if (Control.mode === 2) {
+            new Text3D(new BABYLON.Vector3(0, 0, 2), "Delete Mode", 200, 1000, 1000);
+        }
     }
     static get width() {
         return this._width;
@@ -862,8 +874,7 @@ Interact._camForward = BABYLON.Vector3.Zero();
 class Main {
     constructor(canvasElement) {
         Main.Canvas = document.getElementById(canvasElement);
-        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { preserveDrawingBuffer: true });
-        Main.Engine.setHardwareScalingLevel(0.25);
+        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { limitDeviceRatio: 0.25 }, true);
     }
     CreateScene() {
         $("canvas").show();
@@ -874,7 +885,7 @@ class Main {
             Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2), Main.Scene);
         }
         else {
-            console.warn("WebVR not supported. Using babylonjs VRDeviceOrientationFreeCamera fallback");
+            console.log("WebVR not supported. Using babylonjs WebVRFreeCamera");
         }
         Main.Camera.minZ = 0.2;
         Main.Engine.switchFullscreen(true);
@@ -901,8 +912,11 @@ class Main {
         IconLoader.LoadIcons(GUI.CreateGUI);
         SaveManager.Load();
         setTimeout(() => {
-            TextManager.DisplayText("Hello", 5000);
-        }, 3000);
+            new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
+        }, 1000);
+        setTimeout(() => {
+            new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
+        }, 1000);
         Main.Scene.registerBeforeRender(GUI.UpdateCameraGUIMatrix);
     }
     CreateDevShowBrickScene() {
@@ -961,7 +975,6 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 $(document).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", (e) => {
     if (!!Main.Engine.isFullscreen) {
-        location.reload();
     }
 });
 function UnselectAllSaves() {
@@ -985,7 +998,6 @@ window.addEventListener("DOMContentLoaded", () => {
             $("#" + id).addClass("panel-primary");
         }
     });
-    console.log("OK");
 });
 class VRMath {
     static IsNanOrZero(n) {
@@ -1191,19 +1203,47 @@ class SmallIcon extends BABYLON.Mesh {
 }
 SmallIcon.lockCameraRotation = false;
 SmallIcon.instances = [];
-class TextManager {
-    static DisplayText(text, duration) {
-        let plane = BABYLON.Mesh.CreatePlane("Plane", 2, Main.Scene);
-        plane.position.z = 2;
-        BABYLON.Vector3.TransformCoordinatesToRef(plane.position, GUI.cameraGUIMatrix, plane.position);
-        plane.lookAt(Main.Camera.position);
-        let texture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(plane);
-        let block = new BABYLON.GUI.TextBlock();
-        block.text = text;
-        block.color = "white";
-        block.fontFamily = "Helvetica";
-        block.fontSize = 100;
-        texture.addControl(block);
+class Text3D {
+    constructor(position, text, delay = 5000, fadeInDelay = 500, fadeOutDelay = 1000) {
+        this.mesh = BABYLON.Mesh.CreatePlane("Plane", 4, Main.Scene);
+        this.mesh.position.copyFrom(position);
+        BABYLON.Vector3.TransformCoordinatesToRef(this.mesh.position, GUI.cameraGUIMatrix, this.mesh.position);
+        this.mesh.lookAt(Main.Camera.position);
+        this.texture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(this.mesh);
+        this.block = new BABYLON.GUI.TextBlock();
+        this.block.text = text;
+        this.block.color = "white";
+        this.block.fontFamily = "Helvetica";
+        this.block.fontSize = 60;
+        this.texture.addControl(this.block);
+        this.tStart = (new Date()).getTime();
+        console.log(this.tStart);
+        this.fadeInDelay = fadeInDelay;
+        this.delay = delay;
+        this.fadeOutDelay = fadeOutDelay;
+        let up = () => {
+            this.update(() => {
+                Main.Scene.unregisterBeforeRender(up);
+            });
+        };
+        Main.Scene.registerBeforeRender(up);
+    }
+    update(onDone) {
+        let t = (new Date()).getTime() - this.tStart;
+        if (t < this.fadeInDelay) {
+            this.block.alpha = t / this.fadeInDelay;
+        }
+        else if (t < this.fadeInDelay + this.delay) {
+            this.block.alpha = 1;
+        }
+        else if (t < this.fadeInDelay + this.delay + this.fadeOutDelay) {
+            this.block.alpha = 1 - ((t - this.fadeInDelay - this.delay) / this.fadeOutDelay);
+        }
+        else {
+            this.texture.dispose();
+            this.mesh.dispose();
+            onDone();
+        }
     }
 }
 class Utils {

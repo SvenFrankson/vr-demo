@@ -21,6 +21,5 @@ window.addEventListener("DOMContentLoaded",
         $("#" + id).addClass("panel-primary");
       }
     });
-    console.log("OK");
   }
 );
