@@ -33,6 +33,7 @@ class GUI {
         SmallIcon.HideClass("brick-pick");
         SmallIcon.HideClass("paint-pick");
         SmallIcon.HideClass("brick-cat");
+        SmallIcon.HideClass("brick-rotate");
         Control.mode = 0;
       }
     );
@@ -46,6 +47,7 @@ class GUI {
         SmallIcon.HideClass("brick-pick");
         SmallIcon.HideClass("paint-pick");
         SmallIcon.ShowClass("brick-cat");
+        SmallIcon.HideClass("brick-rotate");
         Control.mode = 5;
       }
     );
@@ -59,6 +61,7 @@ class GUI {
         SmallIcon.HideClass("brick-pick");
         SmallIcon.HideClass("brick-cat");
         SmallIcon.ShowClass("paint-pick");
+        SmallIcon.HideClass("brick-rotate");
         Control.mode = 5;
       }
     );
@@ -72,6 +75,7 @@ class GUI {
         SmallIcon.HideClass("brick-pick");
         SmallIcon.HideClass("brick-cat");
         SmallIcon.HideClass("paint-pick");
+        SmallIcon.HideClass("brick-rotate");
         Control.mode = 2;
       }
     );
@@ -95,6 +99,7 @@ class GUI {
           () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("brick-s-bar");
+            SmallIcon.ShowClass("brick-rotate");
             Control.width = v;
             Control.height = 1;
             Control.length = 1;
@@ -123,6 +128,7 @@ class GUI {
           () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("brick-m-bar");
+            SmallIcon.ShowClass("brick-rotate");
             Control.width = v;
             Control.height = 3;
             Control.length = 1;
@@ -151,6 +157,7 @@ class GUI {
           () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("brick-s-brick");
+            SmallIcon.ShowClass("brick-rotate");
             Control.width = v;
             Control.height = 1;
             Control.length = 2;
@@ -179,6 +186,7 @@ class GUI {
           () => {
             SmallIcon.UnLockCameraRotation();
             SmallIcon.HideClass("brick-m-brick");
+            SmallIcon.ShowClass("brick-rotate");
             Control.width = v;
             Control.height = 3;
             Control.length = 2;
@@ -187,7 +195,24 @@ class GUI {
         ).Hide();
       }
     );
-
+    new SmallIcon(
+      "rotate-left",
+      "S10",
+      Main.Camera,
+      ["brick-rotate"],
+      () => {
+        Control.rotation --;
+      }
+    ).Hide();
+    new SmallIcon(
+      "rotate-right",
+      "S11",
+      Main.Camera,
+      ["brick-rotate"],
+      () => {
+        Control.rotation ++;
+      }
+    ).Hide();
     [
       {name: "black", color: "#232323"},
       {name: "red", color: "#f45342"},

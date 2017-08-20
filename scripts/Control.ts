@@ -109,6 +109,7 @@ class Control {
     Control._lastPointerDownTime = t;
 
     let ray: BABYLON.Ray = Main.Camera.getForwardRay();
+    console.log(ray);
     let pick: BABYLON.PickingInfo = Main.Scene.pickWithRay(
       ray,
       Control.pickPredicate

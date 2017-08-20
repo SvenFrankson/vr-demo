@@ -12,7 +12,6 @@ window.addEventListener("DOMContentLoaded",
       }
     }
     $(".save").on("pointerdown", (e: PointerEvent) => {
-      console.log(".");
       if (e.currentTarget instanceof HTMLElement) {
         let id: string = e.currentTarget.id;
         Main.currentSave = id;

@@ -147,6 +147,7 @@ class Brick extends BABYLON.Mesh {
       }
     }
     this.material = BrickMaterial.GetMaterial(color);
+    this.Unlit();
     this.freezeWorldMatrix();
     Brick.instances.push(this);
     if (save) {
@@ -176,7 +177,9 @@ class Brick extends BABYLON.Mesh {
   }
 
   public Unlit(): void {
+    this.renderOutline = true;
     this.outlineColor.copyFromFloats(0, 0, 0);
+    this.outlineWidth = 0.02;
   }
 
   public static UnlitAll(): void {

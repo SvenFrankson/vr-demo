@@ -115,7 +115,7 @@ class SmallIcon extends BABYLON.Mesh {
   private _alphaCam: number = 0;
   private UpdatePosition(): void {
     this._cameraForward = this.camera.getForwardRay().direction;
-    if (!SmallIcon.lockCameraRotation && this._cameraForward.y < 0.3) {
+    if (!SmallIcon.lockCameraRotation && this._cameraForward.y < 0.2) {
       this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
     }
     let rotationQuaternion: BABYLON.Quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, this._alphaCam);

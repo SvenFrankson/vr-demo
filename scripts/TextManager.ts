@@ -17,7 +17,7 @@ class Text3D {
     fadeOutDelay: number = 1000
   ) {
     this.mesh = BABYLON.Mesh.CreatePlane("Text3D", 4, Main.Scene);
-    this.mesh.position.copyFrom(position);
+    this.mesh.position.copyFrom(position.scale(Main.textPositionScale));
     BABYLON.Vector3.TransformCoordinatesToRef(this.mesh.position, GUI.cameraGUIMatrix, this.mesh.position);
     this.mesh.lookAt(Main.Camera.position);
     this.texture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(this.mesh);

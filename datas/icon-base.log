@@ -7,6 +7,22 @@ Exporter version: 5.2.0, Blender version: 2.78 (sub 0)
 		texture directory:  C:\Users\Sven\Documents\SvenFrankson\vr-demo\datas\
 	Python World class constructor completed
 	WARNING: No active camera has been assigned, or is not in a currently selected Blender layer
+	processing begun of mesh:  S11
+		WARNING: No materials have been assigned: 
+		num positions      :  9
+		num normals        :  9
+		num uvs            :  18
+		num uvs2           :  0
+		num colors         :  0
+		num indices        :  24
+	processing begun of mesh:  S10
+		WARNING: No materials have been assigned: 
+		num positions      :  9
+		num normals        :  9
+		num uvs            :  18
+		num uvs2           :  0
+		num colors         :  0
+		num indices        :  24
 	processing begun of mesh:  M4
 		WARNING: No materials have been assigned: 
 		num positions      :  15
@@ -146,4 +162,4 @@ Exporter version: 5.2.0, Blender version: 2.78 (sub 0)
 ========= Writing of scene file started =========
 ========= Writing of scene file completed =========
 ========= end of processing =========
-elapsed time:  0 min, 0.0655 secs
+elapsed time:  0 min, 0.0675 secs

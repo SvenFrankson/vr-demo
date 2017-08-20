@@ -23,10 +23,12 @@ class Main {
   public static cursor: BABYLON.Mesh;
 
   public static currentSave: string = "save1";
+  public static hasGyro: boolean = false;
+  public static textPositionScale: number = 1;
 
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
-    Main.Engine = new BABYLON.Engine(Main.Canvas, true, {limitDeviceRatio: 4, preserveDrawingBuffer: true}, true);
+    Main.Engine = new BABYLON.Engine(Main.Canvas, true, {preserveDrawingBuffer: true}, true);
   }
 
   CreateScene(vrMode: boolean): void {
@@ -34,21 +36,46 @@ class Main {
     Main.Scene = new BABYLON.Scene(Main.Engine);
     Main.Scene.registerBeforeRender(Control.Update);
 
-    if (vrMode && navigator.getVRDisplays) {
-      console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
-      Main.Camera = new BABYLON.WebVRFreeCamera(
-        "VRCamera",
-        new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2),
-        Main.Scene
-      );
+    if (vrMode) {
+      if (navigator.getVRDisplays) {
+        Main.Camera = new BABYLON.WebVRFreeCamera(
+          "WebVRFreeCamera",
+          new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2),
+          Main.Scene
+        );
+      } else if (Main.hasGyro) {
+        Main.Engine.setHardwareScalingLevel(1);
+        Main.Camera = new BABYLON.VRDeviceOrientationFreeCamera(
+          "VRDeviceOrientationFreeCamera",
+          new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2),
+          Main.Scene
+        );
+      } else {
+        Main.textPositionScale = 1.5;
+        Main.Camera = new BABYLON.FreeCamera(
+          "FreeCamera",
+          new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2),
+          Main.Scene
+        );
+      }
     } else {
-      console.log("WebVR not supported. Using babylonjs DeviceOrientationCamera");
-      Main.Camera = new BABYLON.DeviceOrientationCamera(
-        "VRCamera",
-        new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2),
-        Main.Scene
-      );
+      if (Main.hasGyro) {
+        Main.textPositionScale = 1.5;
+        Main.Camera = new BABYLON.DeviceOrientationCamera(
+          "DeviceOrientationCamera",
+          new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2),
+          Main.Scene
+        );
+      } else {
+        Main.textPositionScale = 1.5;
+        Main.Camera = new BABYLON.FreeCamera(
+          "FreeCamera",
+          new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2),
+          Main.Scene
+        );
+      }
     }
+    console.log("Camera : " + Main.Camera.name);
     Main.Camera.minZ = 0.2;
     Main.Engine.switchFullscreen(true);
     Main.Engine.resize();
@@ -149,6 +176,10 @@ class Main {
     Main.cursor.renderingGroupId = 1;
   }
 }
+
+window.addEventListener("devicemotion", (event: DeviceOrientationEvent) => {
+  Main.hasGyro = true;
+});
 
 window.addEventListener("DOMContentLoaded", () => {
   $("#cardboard-main-icon").on("click", () => {

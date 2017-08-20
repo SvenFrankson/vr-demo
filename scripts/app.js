@@ -19,6 +19,7 @@ class Brick extends BABYLON.Mesh {
             }
         }
         this.material = BrickMaterial.GetMaterial(color);
+        this.Unlit();
         this.freezeWorldMatrix();
         Brick.instances.push(this);
         if (save) {
@@ -123,7 +124,9 @@ class Brick extends BABYLON.Mesh {
         this.outlineWidth = 0.02;
     }
     Unlit() {
+        this.renderOutline = true;
         this.outlineColor.copyFromFloats(0, 0, 0);
+        this.outlineWidth = 0.02;
     }
     static UnlitAll() {
         Brick.instances.forEach((b) => {
@@ -485,6 +488,7 @@ class Control {
         }
         Control._lastPointerDownTime = t;
         let ray = Main.Camera.getForwardRay();
+        console.log(ray);
         let pick = Main.Scene.pickWithRay(ray, Control.pickPredicate);
         if (pick.hit) {
             Control._meshAimed = pick.pickedMesh;
@@ -637,6 +641,7 @@ class GUI {
             SmallIcon.HideClass("brick-pick");
             SmallIcon.HideClass("paint-pick");
             SmallIcon.HideClass("brick-cat");
+            SmallIcon.HideClass("brick-rotate");
             Control.mode = 0;
         });
         Main.buildIcon = new SmallIcon("build-icon", "L1", Main.Camera, [""], () => {
@@ -644,6 +649,7 @@ class GUI {
             SmallIcon.HideClass("brick-pick");
             SmallIcon.HideClass("paint-pick");
             SmallIcon.ShowClass("brick-cat");
+            SmallIcon.HideClass("brick-rotate");
             Control.mode = 5;
         });
         Main.deleteIcon = new SmallIcon("paint-icon", "L2", Main.Camera, [""], () => {
@@ -651,6 +657,7 @@ class GUI {
             SmallIcon.HideClass("brick-pick");
             SmallIcon.HideClass("brick-cat");
             SmallIcon.ShowClass("paint-pick");
+            SmallIcon.HideClass("brick-rotate");
             Control.mode = 5;
         });
         Main.deleteIcon = new SmallIcon("delete-icon", "L3", Main.Camera, [""], () => {
@@ -658,6 +665,7 @@ class GUI {
             SmallIcon.HideClass("brick-pick");
             SmallIcon.HideClass("brick-cat");
             SmallIcon.HideClass("paint-pick");
+            SmallIcon.HideClass("brick-rotate");
             Control.mode = 2;
         });
         new SmallIcon("bricks/brick-s-bar", "M0", Main.Camera, ["brick-cat"], () => {
@@ -668,6 +676,7 @@ class GUI {
             new SmallIcon("bricks/brick-" + v + "-1-1", "M" + i, Main.Camera, ["brick-pick", "brick-s-bar"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-s-bar");
+                SmallIcon.ShowClass("brick-rotate");
                 Control.width = v;
                 Control.height = 1;
                 Control.length = 1;
@@ -682,6 +691,7 @@ class GUI {
             new SmallIcon("bricks/brick-" + v + "-3-1", "M" + i, Main.Camera, ["brick-pick", "brick-m-bar"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-m-bar");
+                SmallIcon.ShowClass("brick-rotate");
                 Control.width = v;
                 Control.height = 3;
                 Control.length = 1;
@@ -696,6 +706,7 @@ class GUI {
             new SmallIcon("bricks/brick-" + v + "-1-2", "M" + i, Main.Camera, ["brick-pick", "brick-s-brick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-s-brick");
+                SmallIcon.ShowClass("brick-rotate");
                 Control.width = v;
                 Control.height = 1;
                 Control.length = 2;
@@ -710,12 +721,19 @@ class GUI {
             new SmallIcon("bricks/brick-" + v + "-3-2", "M" + i, Main.Camera, ["brick-pick", "brick-m-brick"], () => {
                 SmallIcon.UnLockCameraRotation();
                 SmallIcon.HideClass("brick-m-brick");
+                SmallIcon.ShowClass("brick-rotate");
                 Control.width = v;
                 Control.height = 3;
                 Control.length = 2;
                 Control.mode = 1;
             }).Hide();
         });
+        new SmallIcon("rotate-left", "S10", Main.Camera, ["brick-rotate"], () => {
+            Control.rotation--;
+        }).Hide();
+        new SmallIcon("rotate-right", "S11", Main.Camera, ["brick-rotate"], () => {
+            Control.rotation++;
+        }).Hide();
         [
             { name: "black", color: "#232323" },
             { name: "red", color: "#f45342" },
@@ -902,7 +920,7 @@ Interact._camForward = BABYLON.Vector3.Zero();
 class Main {
     constructor(canvasElement) {
         Main.Canvas = document.getElementById(canvasElement);
-        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { limitDeviceRatio: 4, preserveDrawingBuffer: true }, true);
+        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { preserveDrawingBuffer: true }, true);
     }
     static get cameraQuaternion() {
         if (Main.Camera instanceof BABYLON.WebVRFreeCamera) {
@@ -916,14 +934,30 @@ class Main {
         $("canvas").show();
         Main.Scene = new BABYLON.Scene(Main.Engine);
         Main.Scene.registerBeforeRender(Control.Update);
-        if (vrMode && navigator.getVRDisplays) {
-            console.log("WebVR supported. Using babylonjs WebVRFreeCamera");
-            Main.Camera = new BABYLON.WebVRFreeCamera("VRCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2), Main.Scene);
+        if (vrMode) {
+            if (navigator.getVRDisplays) {
+                Main.Camera = new BABYLON.WebVRFreeCamera("WebVRFreeCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2), Main.Scene);
+            }
+            else if (Main.hasGyro) {
+                Main.Engine.setHardwareScalingLevel(1);
+                Main.Camera = new BABYLON.VRDeviceOrientationFreeCamera("VRDeviceOrientationFreeCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 2, Config.ZMax * Config.ZSize / 2), Main.Scene);
+            }
+            else {
+                Main.textPositionScale = 1.5;
+                Main.Camera = new BABYLON.FreeCamera("FreeCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2), Main.Scene);
+            }
         }
         else {
-            console.log("WebVR not supported. Using babylonjs DeviceOrientationCamera");
-            Main.Camera = new BABYLON.DeviceOrientationCamera("VRCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2), Main.Scene);
+            if (Main.hasGyro) {
+                Main.textPositionScale = 1.5;
+                Main.Camera = new BABYLON.DeviceOrientationCamera("DeviceOrientationCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2), Main.Scene);
+            }
+            else {
+                Main.textPositionScale = 1.5;
+                Main.Camera = new BABYLON.FreeCamera("FreeCamera", new BABYLON.Vector3(Config.XMax * Config.XSize / 2, 4, Config.ZMax * Config.ZSize / 2), Main.Scene);
+            }
         }
+        console.log("Camera : " + Main.Camera.name);
         Main.Camera.minZ = 0.2;
         Main.Engine.switchFullscreen(true);
         Main.Engine.resize();
@@ -1003,6 +1037,11 @@ class Main {
     }
 }
 Main.currentSave = "save1";
+Main.hasGyro = false;
+Main.textPositionScale = 1;
+window.addEventListener("devicemotion", (event) => {
+    Main.hasGyro = true;
+});
 window.addEventListener("DOMContentLoaded", () => {
     $("#cardboard-main-icon").on("click", () => {
         let game = new Main("render-canvas");
@@ -1032,7 +1071,6 @@ window.addEventListener("DOMContentLoaded", () => {
         }
     }
     $(".save").on("pointerdown", (e) => {
-        console.log(".");
         if (e.currentTarget instanceof HTMLElement) {
             let id = e.currentTarget.id;
             Main.currentSave = id;
@@ -1231,7 +1269,7 @@ class SmallIcon extends BABYLON.Mesh {
     }
     UpdatePosition() {
         this._cameraForward = this.camera.getForwardRay().direction;
-        if (!SmallIcon.lockCameraRotation && this._cameraForward.y < 0.3) {
+        if (!SmallIcon.lockCameraRotation && this._cameraForward.y < 0.2) {
             this._alphaCam = VRMath.AngleFromToAround(BABYLON.Axis.Z, this._cameraForward, BABYLON.Axis.Y);
         }
         let rotationQuaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, this._alphaCam);
@@ -1249,7 +1287,7 @@ SmallIcon.instances = [];
 class Text3D {
     constructor(position, text, fadeInDelay = 500, delay = 3000, fadeOutDelay = 1000) {
         this.mesh = BABYLON.Mesh.CreatePlane("Text3D", 4, Main.Scene);
-        this.mesh.position.copyFrom(position);
+        this.mesh.position.copyFrom(position.scale(Main.textPositionScale));
         BABYLON.Vector3.TransformCoordinatesToRef(this.mesh.position, GUI.cameraGUIMatrix, this.mesh.position);
         this.mesh.lookAt(Main.Camera.position);
         this.texture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(this.mesh);
