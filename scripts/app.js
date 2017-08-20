@@ -404,16 +404,34 @@ class Control {
             Control.previewBrick.isVisible = false;
         }
         if (Control.mode === 0) {
-            new Text3D(new BABYLON.Vector3(0, 0, 2), "Move Mode", 200, 1000, 1000);
+            new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Move Mode", 200, 1000, 1000);
+            if (Control._firstMove) {
+                Control._firstMove = false;
+                new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to go Forward.", 200, 5000, 1000);
+                new Text3D(new BABYLON.Vector3(0, -0.3, 2), "Double clic to go backward.", 200, 7000, 1000);
+            }
         }
         else if (Control.mode === 1) {
-            new Text3D(new BABYLON.Vector3(0, 0, 2), "Build Mode", 200, 1000, 1000);
+            new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Build Mode", 200, 1000, 1000);
+            if (Control._firstBuild) {
+                Control._firstBuild = false;
+                new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to add block.", 200, 5000, 1000);
+                new Text3D(new BABYLON.Vector3(0, -0.3, 2), "Tilt your head to rotate.", 200, 7000, 1000);
+            }
         }
         else if (Control.mode === 4) {
-            new Text3D(new BABYLON.Vector3(0, 0, 2), "Paint Mode", 200, 1000, 1000);
+            new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Paint Mode", 200, 1000, 1000);
+            if (Control._firstPaint) {
+                Control._firstPaint = false;
+                new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to paint aimed block.", 200, 5000, 1000);
+            }
         }
         else if (Control.mode === 2) {
-            new Text3D(new BABYLON.Vector3(0, 0, 2), "Delete Mode", 200, 1000, 1000);
+            new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Delete Mode", 200, 1000, 1000);
+            if (Control._firstDelete) {
+                Control._firstDelete = false;
+                new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to delete aimed block.", 200, 5000, 1000);
+            }
         }
     }
     static get width() {
@@ -453,6 +471,12 @@ class Control {
         this._rotation = v % 4;
         Control.previewBrick.rotation.y = v * Math.PI / 2;
     }
+    static pickPredicate(mesh) {
+        return (mesh !== Main.cursor &&
+            mesh !== Control.previewBrick &&
+            mesh.isVisible &&
+            !mesh.name.includes("Text3D"));
+    }
     static onPointerDown() {
         let t = (new Date()).getTime();
         if ((t - Control._lastPointerDownTime) < Control.DOUBLEPOINTERDELAY) {
@@ -461,7 +485,7 @@ class Control {
         }
         Control._lastPointerDownTime = t;
         let ray = Main.Camera.getForwardRay();
-        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible; });
+        let pick = Main.Scene.pickWithRay(ray, Control.pickPredicate);
         if (pick.hit) {
             Control._meshAimed = pick.pickedMesh;
             if (Control._meshAimed instanceof SmallIcon) {
@@ -514,7 +538,7 @@ class Control {
         SmallIcon.UnlitAll();
         Brick.UnlitAll();
         let ray = Main.Camera.getForwardRay();
-        let pick = Main.Scene.pickWithRay(ray, (mesh) => { return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible; });
+        let pick = Main.Scene.pickWithRay(ray, Control.pickPredicate);
         if (pick.hit) {
             Control._meshAimed = pick.pickedMesh;
             if (Control._meshAimed instanceof SmallIcon) {
@@ -591,6 +615,10 @@ Control.HEADTILTDELAY = 1000;
 Control._lastHeadTiltedTime = 0;
 Control._cameraSpeed = 0;
 Control._mode = 0;
+Control._firstMove = true;
+Control._firstBuild = true;
+Control._firstPaint = true;
+Control._firstDelete = true;
 Control._width = 1;
 Control._height = 1;
 Control._length = 1;
@@ -874,7 +902,7 @@ Interact._camForward = BABYLON.Vector3.Zero();
 class Main {
     constructor(canvasElement) {
         Main.Canvas = document.getElementById(canvasElement);
-        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { limitDeviceRatio: 0.25 }, true);
+        Main.Engine = new BABYLON.Engine(Main.Canvas, true, { limitDeviceRatio: 0.25, preserveDrawingBuffer: true }, true);
     }
     CreateScene() {
         $("canvas").show();
@@ -912,11 +940,11 @@ class Main {
         IconLoader.LoadIcons(GUI.CreateGUI);
         SaveManager.Load();
         setTimeout(() => {
-            new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
-        }, 1000);
+            new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Welcome to VR Brick Builder,");
+        }, 100);
         setTimeout(() => {
-            new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
-        }, 1000);
+            new Text3D(new BABYLON.Vector3(0, 0, 2), "Raise your head to pick an action !");
+        }, 2100);
         Main.Scene.registerBeforeRender(GUI.UpdateCameraGUIMatrix);
     }
     CreateDevShowBrickScene() {
@@ -1204,8 +1232,8 @@ class SmallIcon extends BABYLON.Mesh {
 SmallIcon.lockCameraRotation = false;
 SmallIcon.instances = [];
 class Text3D {
-    constructor(position, text, delay = 5000, fadeInDelay = 500, fadeOutDelay = 1000) {
-        this.mesh = BABYLON.Mesh.CreatePlane("Plane", 4, Main.Scene);
+    constructor(position, text, fadeInDelay = 500, delay = 3000, fadeOutDelay = 1000) {
+        this.mesh = BABYLON.Mesh.CreatePlane("Text3D", 4, Main.Scene);
         this.mesh.position.copyFrom(position);
         BABYLON.Vector3.TransformCoordinatesToRef(this.mesh.position, GUI.cameraGUIMatrix, this.mesh.position);
         this.mesh.lookAt(Main.Camera.position);
@@ -1214,10 +1242,9 @@ class Text3D {
         this.block.text = text;
         this.block.color = "white";
         this.block.fontFamily = "Helvetica";
-        this.block.fontSize = 60;
+        this.block.fontSize = 50;
         this.texture.addControl(this.block);
         this.tStart = (new Date()).getTime();
-        console.log(this.tStart);
         this.fadeInDelay = fadeInDelay;
         this.delay = delay;
         this.fadeOutDelay = fadeOutDelay;

@@ -5,6 +5,10 @@ class Control {
   private static _lastHeadTiltedTime: number = 0;
   private static _cameraSpeed: number = 0;
   private static _mode: number = 0;
+  private static _firstMove: boolean = true;
+  private static _firstBuild: boolean = true;
+  private static _firstPaint: boolean = true;
+  private static _firstDelete: boolean = true;
   public static get mode(): number {
     return Control._mode;
   }
@@ -16,13 +20,31 @@ class Control {
       Control.previewBrick.isVisible = false;
     }
     if (Control.mode === 0) {
-      new Text3D(new BABYLON.Vector3(0, 0, 2), "Move Mode", 200, 1000, 1000);
+      new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Move Mode", 200, 1000, 1000);
+      if (Control._firstMove) {
+        Control._firstMove = false;
+        new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to go Forward.", 200, 5000, 1000);
+        new Text3D(new BABYLON.Vector3(0, -0.3, 2), "Double clic to go backward.", 200, 7000, 1000);
+      }
     } else if (Control.mode === 1) {
-      new Text3D(new BABYLON.Vector3(0, 0, 2), "Build Mode", 200, 1000, 1000);
+      new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Build Mode", 200, 1000, 1000);
+      if (Control._firstBuild) {
+        Control._firstBuild = false;
+        new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to add block.", 200, 5000, 1000);
+        new Text3D(new BABYLON.Vector3(0, -0.3, 2), "Tilt your head to rotate.", 200, 7000, 1000);
+      }
     } else if (Control.mode === 4) {
-      new Text3D(new BABYLON.Vector3(0, 0, 2), "Paint Mode", 200, 1000, 1000);
+      new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Paint Mode", 200, 1000, 1000);
+      if (Control._firstPaint) {
+        Control._firstPaint = false;
+        new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to paint aimed block.", 200, 5000, 1000);
+      }
     } else if (Control.mode === 2) {
-      new Text3D(new BABYLON.Vector3(0, 0, 2), "Delete Mode", 200, 1000, 1000);
+      new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Delete Mode", 200, 1000, 1000);
+      if (Control._firstDelete) {
+        Control._firstDelete = false;
+        new Text3D(new BABYLON.Vector3(0, 0, 2), "Clic to delete aimed block.", 200, 5000, 1000);
+      }
     }
   }
   public static previewBrick: BABYLON.Mesh;
@@ -69,6 +91,15 @@ class Control {
     Control.previewBrick.rotation.y = v * Math.PI / 2;
   }
 
+  public static pickPredicate(mesh: BABYLON.Mesh): boolean {
+    return (
+      mesh !== Main.cursor &&
+      mesh !== Control.previewBrick &&
+      mesh.isVisible &&
+      !mesh.name.includes("Text3D")
+    );
+  }
+
   public static onPointerDown(): void {
     let t: number = (new Date()).getTime();
     if ((t - Control._lastPointerDownTime) < Control.DOUBLEPOINTERDELAY) {
@@ -80,7 +111,7 @@ class Control {
     let ray: BABYLON.Ray = Main.Camera.getForwardRay();
     let pick: BABYLON.PickingInfo = Main.Scene.pickWithRay(
       ray,
-      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible;}
+      Control.pickPredicate
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;
@@ -143,7 +174,7 @@ class Control {
     let ray: BABYLON.Ray = Main.Camera.getForwardRay();
     let pick: BABYLON.PickingInfo = Main.Scene.pickWithRay(
       ray,
-      (mesh: BABYLON.Mesh) => {return mesh !== Main.cursor && mesh !== Control.previewBrick && mesh.isVisible;}
+      Control.pickPredicate
     );
     if (pick.hit) {
       Control._meshAimed = pick.pickedMesh;

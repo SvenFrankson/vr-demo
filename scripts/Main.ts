@@ -19,7 +19,7 @@ class Main {
 
   constructor(canvasElement: string) {
     Main.Canvas = document.getElementById(canvasElement) as HTMLCanvasElement;
-    Main.Engine = new BABYLON.Engine(Main.Canvas, true, {limitDeviceRatio: 0.25}, true);
+    Main.Engine = new BABYLON.Engine(Main.Canvas, true, {limitDeviceRatio: 0.25, preserveDrawingBuffer: true}, true);
   }
 
   CreateScene(): void {
@@ -69,15 +69,15 @@ class Main {
 
     setTimeout(
       () => {
-        new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
+        new Text3D(new BABYLON.Vector3(0, 0.3, 2), "Welcome to VR Brick Builder,");
       },
-      1000
+      100
     );
     setTimeout(
       () => {
-        new Text3D(new BABYLON.Vector3(0, 0, 2), "Welcome to VR Brick Builder !");
+        new Text3D(new BABYLON.Vector3(0, 0, 2), "Raise your head to pick an action !");
       },
-      1000
+      2100
     );
 
     Main.Scene.registerBeforeRender(GUI.UpdateCameraGUIMatrix);

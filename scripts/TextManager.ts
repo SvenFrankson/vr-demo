@@ -12,11 +12,11 @@ class Text3D {
   constructor(
     position: BABYLON.Vector3,
     text: string,
-    delay: number = 5000,
     fadeInDelay: number = 500,
+    delay: number = 3000,
     fadeOutDelay: number = 1000
   ) {
-    this.mesh = BABYLON.Mesh.CreatePlane("Plane", 4, Main.Scene);
+    this.mesh = BABYLON.Mesh.CreatePlane("Text3D", 4, Main.Scene);
     this.mesh.position.copyFrom(position);
     BABYLON.Vector3.TransformCoordinatesToRef(this.mesh.position, GUI.cameraGUIMatrix, this.mesh.position);
     this.mesh.lookAt(Main.Camera.position);
@@ -25,10 +25,9 @@ class Text3D {
     this.block.text = text;
     this.block.color = "white";
     this.block.fontFamily = "Helvetica";
-    this.block.fontSize = 60;
+    this.block.fontSize = 50;
     this.texture.addControl(this.block);
     this.tStart = (new Date()).getTime();
-    console.log(this.tStart);
     this.fadeInDelay = fadeInDelay;
     this.delay = delay;
     this.fadeOutDelay = fadeOutDelay;
